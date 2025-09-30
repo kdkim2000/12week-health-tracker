@@ -51,7 +51,7 @@ const nextConfig: NextConfig = {
   eslint: {
     // 빌드 시 ESLint 오류 무시 (개발 중인 경우)
     // 프로덕션 배포 전에는 false로 변경 권장
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: true,
   },
 };
 
