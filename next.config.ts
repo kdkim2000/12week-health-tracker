@@ -31,9 +31,9 @@ const nextConfig: NextConfig = {
    * - 특별한 경우: [사용자명].github.io 저장소는 ''로 설정
    */
   basePath: process.env.NODE_ENV === 'production' 
-    ? '/저장소명'  // 🔴 여기를 실제 저장소명으로 변경하세요!
+    ? '/12week-health-tracker'  // 🔴 여기를 실제 저장소명으로 변경하세요!
     : '',
-  
+  assetPrefix: '/12week-health-tracker/', // 정적 파일 prefix
   // ⭐ 이미지 최적화 비활성화 (정적 사이트 필수)
   images: {
     unoptimized: true,
