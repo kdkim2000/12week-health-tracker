@@ -1,64 +1,99 @@
-# GitHub Pages 배포 워크플로우
+# .github/workflows/deploy.yml
+# GitHub Pages 배포 워크플로우 (개선 버전)
+
 name: Deploy to GitHub Pages
 
-# 언제 이 워크플로우를 실행할 것인지 정의
+# 워크플로우 실행 조건
 on:
   # main 브랜치에 push할 때 실행
   push:
     branches: ["main"]
+    # 불필요한 빌드 방지 (선택사항)
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
   
-  # 수동으로 실행할 수 있도록 설정
+  # 수동 실행 옵션
   workflow_dispatch:
 
 # 권한 설정
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: read        # 저장소 읽기
+  pages: write         # GitHub Pages 쓰기
+  id-token: write      # OIDC 토큰 발급
 
-# 동시 실행 제어
+# 동시 실행 제어 (같은 그룹의 워크플로우는 하나만 실행)
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  # 빌드 작업
+  # ==================== 빌드 작업 ====================
   build:
     runs-on: ubuntu-latest
     
     steps:
       # 1. 저장소 체크아웃
-      - name: Checkout
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
       
-      # 2. Node.js 설정
-      - name: Setup Node.js
+      # 2. Node.js 환경 설정
+      - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: 'npm'
       
-      # 3. 의존성 설치
-      - name: Install dependencies
+      # 3. 캐시 복원 (빌드 속도 향상) - 선택사항
+      - name: 📦 Restore cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+      
+      # 4. 의존성 설치
+      - name: 📚 Install dependencies
         run: npm ci
       
-      # 4. ESLint (에러 무시, 로그만 남김)
-      - name: Run ESLint
+      # 5. TypeScript 타입 체크 (선택사항)
+      - name: 🔍 Type check
+        run: npx tsc --noEmit
+        continue-on-error: true
+      
+      # 6. ESLint 실행 (경고만, 빌드 중단 안 함)
+      - name: 🔎 Run ESLint
         run: npm run lint || true
-
-      # 5. Next.js 프로젝트 빌드 (ESLint 오류 무시)
-      - name: Build with Next.js
+      
+      # 7. Next.js 빌드
+      - name: 🏗️ Build Next.js
         run: npm run build
         env:
           NODE_ENV: production
-
-      # 6. 정적 파일 업로드 준비
-      - name: Upload artifact
+          # 추가 환경 변수 (필요시)
+          # NEXT_PUBLIC_GA_ID: ${{ secrets.GA_ID }}
+      
+      # 8. .nojekyll 파일 생성 (GitHub Pages에서 _next 폴더 접근 허용)
+      - name: 📄 Create .nojekyll
+        run: touch ./out/.nojekyll
+      
+      # 9. 빌드 결과물 검증 (선택사항)
+      - name: ✅ Verify build output
+        run: |
+          echo "📊 Build output size:"
+          du -sh ./out
+          echo "📁 Files in output:"
+          ls -la ./out
+      
+      # 10. GitHub Pages용 아티팩트 업로드
+      - name: 📤 Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
 
-  # 배포 작업
+  # ==================== 배포 작업 ====================
   deploy:
     environment:
       name: github-pages
@@ -68,6 +103,12 @@ jobs:
     needs: build
     
     steps:
-      - name: Deploy to GitHub Pages
+      - name: 🚀 Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      
+      # 배포 완료 알림 (선택사항)
+      - name: 🎉 Deployment complete
+        run: |
+          echo "✅ Deployment successful!"
+          echo "🌐 Site URL: ${{ steps.deployment.outputs.page_url }}"

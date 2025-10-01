@@ -6,11 +6,20 @@ import type { NextConfig } from 'next';
 /**
  * GitHub Pages 배포를 위한 Next.js 설정
  * - output: 'export' - 정적 HTML로 내보내기 (GitHub Pages 필수)
- * - basePath: GitHub Pages URL 구조에 맞춤
+ * - basePath: GitHub Pages URL 구조에 맞춤 (프로덕션 환경에서만)
  * - images.unoptimized: 정적 사이트에서는 Next.js 이미지 최적화 사용 불가
  * 
  * 배포 URL 형식: https://[GitHub사용자명].github.io/[저장소명]/
+ * 
+ * ⭐ 중요: 로컬 개발(npm run dev)과 프로덕션 배포를 구분하여 설정
  */
+
+// 저장소명 설정 (한 곳에서만 변경하면 됨)
+const REPO_NAME = '12week-health-tracker';
+
+// 프로덕션 환경 여부 확인
+const isProduction = process.env.NODE_ENV === 'production';
+
 const nextConfig: NextConfig = {
   // React 엄격 모드 활성화 (개발 시 잠재적 문제 발견)
   reactStrictMode: true,
@@ -19,21 +28,22 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   
   // ⭐ GitHub Pages 배포를 위한 필수 설정
-  output: 'export',  // 'standalone'에서 'export'로 변경
+  output: 'export',  // 정적 HTML로 내보내기
   
   /**
-   * ⭐ basePath 설정 - 매우 중요!
-   * 
-   * 아래 '저장소명'을 실제 GitHub 저장소 이름으로 변경하세요
-   * 예시:
-   * - 저장소명이 'my-portfolio'인 경우: '/my-portfolio'
-   * - 저장소명이 'awesome-blog'인 경우: '/awesome-blog'
-   * - 특별한 경우: [사용자명].github.io 저장소는 ''로 설정
+   * ⭐ basePath 설정 - ✅ 백틱(`)으로 감싸기
+   * - 로컬 개발: '' (빈 문자열)
+   * - 프로덕션: '/저장소명'
    */
-  basePath: process.env.NODE_ENV === 'production' 
-    ? '/12week-health-tracker'  // 🔴 여기를 실제 저장소명으로 변경하세요!
-    : '',
-  assetPrefix: '/12week-health-tracker/', // 정적 파일 prefix
+  basePath: isProduction ? `/${REPO_NAME}` : '',
+  
+  /**
+   * ⭐ assetPrefix 설정 - ✅ 백틱(`)으로 감싸기
+   * - 로컬 개발: undefined (설정하지 않음)
+   * - 프로덕션: '/저장소명'
+   */
+  assetPrefix: isProduction ? `/${REPO_NAME}` : undefined,
+  
   // ⭐ 이미지 최적화 비활성화 (정적 사이트 필수)
   images: {
     unoptimized: true,
@@ -44,13 +54,11 @@ const nextConfig: NextConfig = {
   
   // TypeScript 및 ESLint 설정
   typescript: {
-    // 빌드 시 TypeScript 오류 무시 (개발 중인 경우)
-    // 프로덕션 배포 전에는 false로 변경 권장
+    // 빌드 시 TypeScript 오류 무시하지 않음 (권장)
     ignoreBuildErrors: false,
   },
   eslint: {
-    // 빌드 시 ESLint 오류 무시 (개발 중인 경우)
-    // 프로덕션 배포 전에는 false로 변경 권장
+    // 빌드 시 ESLint 경고는 무시 (개발 편의성)
     ignoreDuringBuilds: true,
   },
 };

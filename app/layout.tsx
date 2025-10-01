@@ -1,12 +1,11 @@
 // 파일 경로: app/layout.tsx
 // 설명: Next.js App Router의 루트 레이아웃 (React 19 호환)
 
-import type { Metadata } from 'next';
+import type { Metadata,Viewport } from 'next';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import theme from './theme';
-
 /**
  * 메타데이터 설정
  */
@@ -20,6 +19,10 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: 'black',
+}
+ 
 /**
  * RootLayout 컴포넌트
  * - Server Component로 유지 (no 'use client')
