@@ -1,67 +1,166 @@
 // 파일 경로: types/index.ts
-// 설명: 애플리케이션 전체에서 사용되는 TypeScript 타입 정의
+// 설명: v2.0 새로운 타입 정의 - 12개 체크 항목 포함
 
 /**
- * 사용자 정보 타입
- * - 로컬 스토리지에 저장되는 사용자 데이터 구조
+ * 사용자 정보 타입 (v2.0 확장)
  */
 export interface User {
-  id: string;                // 고유 식별자 (UUID 형식)
-  email: string;             // 사용자 이메일 (로그인 ID로 사용)
-  password: string;          // 비밀번호 (실제 서비스에서는 해시 처리 필요)
-  startDate: string;         // 12주 프로그램 시작일 (ISO 8601 형식: YYYY-MM-DD)
-  createdAt: string;         // 계정 생성일시
+  id: string;
+  email: string;
+  password: string;
+  startDate: string;              // 프로그램 시작일
+  createdAt: string;
+  
+  // 🆕 v2.0 추가 필드
+  initialWeight: number;          // 초기 체중
+  targetWeight: number;           // 목표 체중
+  initialWaist: number;           // 초기 허리둘레
+  targetWaist: number;            // 목표 허리둘레
 }
 
 /**
- * 일일 체크리스트 타입
- * - 매일의 운동, 식단, 체중 기록을 저장
+ * Phase 타입 (1-4주 / 5-8주 / 9-12주)
+ */
+export type Phase = 1 | 2 | 3;
+
+/**
+ * 일일 체크리스트 v2.0 (12개 항목)
  */
 export interface DailyCheck {
-  date: string;              // 기록 날짜 (YYYY-MM-DD)
-  exerciseCompleted: boolean; // 운동 완료 여부
-  dietCompleted: boolean;    // 식단 준수 여부
-  weight: number | null;     // 체중 기록 (kg, null이면 미기록)
+  date: string;                   // YYYY-MM-DD
+  
+  // 식사 관련 (3개)
+  breakfastCompleted: boolean;    // 아침 식사
+  breakfastTime?: string;         // 식사 시간 (HH:MM)
+  lunchCompleted: boolean;        // 점심 식사
+  lunchTime?: string;
+  dinnerCompleted: boolean;       // 저녁 식사
+  dinnerTime?: string;
+  
+  // 수분 섭취
+  waterIntake: number;            // 물 섭취량 (잔 수, 0-8)
+  
+  // 운동
+  exerciseCompleted: boolean;     // 운동 완료 여부
+  exerciseType?: string;          // 운동 종류 (예: "유산소 30분")
+  exerciseDuration?: number;      // 운동 시간 (분)
+  
+  // 수면
+  sleepHours?: number;            // 수면 시간 (시간 단위)
+  
+  // 신체 측정
+  weight?: number;                // 체중 (kg)
+  waistCircumference?: number;    // 허리둘레 (cm)
+  
+  // 컨디션
+  condition?: number;             // 컨디션 (1-10)
+  memo?: string;                  // 메모
 }
 
 /**
- * 로컬 스토리지 전체 구조 타입
- * - 브라우저 로컬 스토리지에 저장되는 전체 데이터 구조
+ * 주간 통계 v2.0
+ */
+export interface WeeklyStats {
+  weekNumber: number;             // 주차 (1-12)
+  phase: Phase;                   // Phase 번호
+  
+  // 식단 통계
+  mealCompletionRate: number;     // 식사 완료율 (%)
+  waterAverageIntake: number;     // 평균 물 섭취 (잔)
+  
+  // 운동 통계
+  exerciseDays: number;           // 운동 일수
+  totalExerciseMinutes: number;   // 총 운동 시간 (분)
+  
+  // 신체 변화
+  averageWeight?: number;         // 평균 체중
+  averageWaist?: number;          // 평균 허리둘레
+  weightChange?: number;          // 체중 변화 (시작 대비)
+  waistChange?: number;           // 허리둘레 변화
+  
+  // 전체 달성률
+  achievementRate: number;        // 전체 달성률 (%)
+}
+
+/**
+ * Phase별 프로그램 정보
+ */
+export interface PhaseInfo {
+  phase: Phase;
+  title: string;
+  weekRange: string;              // "1-4주"
+  description: string;
+  focusAreas: string[];           // 집중 영역
+  exerciseGoal: string;           // 운동 목표
+  nutritionGoal: string;          // 식단 목표
+}
+
+/**
+ * 주차별 프로그램 상세
+ */
+export interface WeeklyProgram {
+  weekNumber: number;
+  phase: Phase;
+  
+  // 운동 프로그램
+  exerciseSchedule: {
+    day: string;                  // "월요일"
+    exercise: string;             // "유산소 30분 + 스트레칭"
+    description: string;
+  }[];
+  
+  // 식단 가이드
+  nutritionGuide: {
+    day: string;
+    meals: {
+      breakfast: string;
+      lunch: string;
+      dinner: string;
+      snacks?: string[];
+    };
+  }[];
+  
+  // 주간 목표
+  weeklyGoals: string[];
+}
+
+/**
+ * 로컬 스토리지 데이터 구조 v2.0
  */
 export interface LocalStorageData {
-  currentUser: string | null;           // 현재 로그인한 사용자 ID
+  currentUser: string | null;
   users: {
-    [userId: string]: User;             // 모든 사용자 정보 (userId를 키로 사용)
+    [userId: string]: User;
   };
   dailyChecks: {
     [userId: string]: {
-      [date: string]: DailyCheck;       // 사용자별, 날짜별 체크리스트
+      [date: string]: DailyCheck;
     };
   };
 }
 
 /**
- * 주간 통계 타입
- * - 각 주차의 달성률 계산 결과
+ * 달력 날짜 타입 v2.0
  */
-export interface WeeklyStats {
-  weekNumber: number;        // 주차 (1-12)
-  totalDays: number;         // 해당 주의 총 일수
-  completedDays: number;     // 모든 항목을 완료한 날 수
-  partialDays: number;       // 일부 항목만 완료한 날 수
-  achievementRate: number;   // 달성률 (0-100)
+export interface CalendarDay {
+  date: string;
+  dayOfWeek: number;
+  weekNumber: number;
+  phase: Phase;
+  isToday: boolean;
+  isPast: boolean;
+  isFuture: boolean;
+  status: 'excellent' | 'good' | 'partial' | 'incomplete' | 'future';
+  completionRate: number;         // 0-100
 }
 
 /**
- * 달력 날짜 타입
- * - 달력 컴포넌트에서 사용하는 날짜 정보
+ * 차트 데이터 포인트
  */
-export interface CalendarDay {
-  date: string;              // 날짜 (YYYY-MM-DD)
-  dayOfWeek: number;         // 요일 (0: 일요일, 6: 토요일)
-  weekNumber: number;        // 주차 (1-12)
-  isToday: boolean;          // 오늘 날짜 여부
-  isPast: boolean;           // 과거 날짜 여부
-  isFuture: boolean;         // 미래 날짜 여부
-  status: 'completed' | 'partial' | 'incomplete' | 'future'; // 달성 상태
+export interface ChartDataPoint {
+  date: string;                   // "1/1" 형식
+  weight?: number;
+  waist?: number;
+  targetWeight?: number;
+  targetWaist?: number;
 }
