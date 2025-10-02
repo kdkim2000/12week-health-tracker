@@ -1,56 +1,37 @@
-// 파일 경로: app/login/page.tsx
-// 설명: 로그인 페이지
-
+// app/login/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Container,
   Box,
-  Paper,
-  Typography,
-  TextField,
   Button,
+  Container,
+  Paper,
+  TextField,
+  Typography,
   Alert,
+  CircularProgress,
   Link as MuiLink,
-  InputAdornment,
-  IconButton,
 } from '@mui/material';
-import { Email, Lock, Visibility, VisibilityOff, Login as LoginIcon } from '@mui/icons-material';
 import Link from 'next/link';
-import { login } from '@/lib/auth';
+import { signIn } from '@/lib/firebase';
 
 /**
- * LoginPage 컴포넌트
- * 
- * 기능:
- * - 이메일/비밀번호 입력
- * - 로그인 처리
- * - 회원가입 페이지로 이동
- * - 비밀번호 표시/숨김 토글
- * 
- * Next.js의 useRouter를 사용하여 페이지 이동
+ * 로그인 페이지 (v3.0 Firebase 연동)
+ * - Firebase Authentication 사용
+ * - 자동 로그인 상태 유지
  */
 export default function LoginPage() {
-  // === Next.js 라우터 ===
-  // useRouter는 Next.js의 페이지 이동을 위한 Hook
   const router = useRouter();
-
-  // === 상태 관리 ===
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  /**
-   * 로그인 폼 제출 핸들러
-   */
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // 폼 기본 동작(페이지 새로고침) 방지
+    e.preventDefault();
     
-    // 입력값 검증
     if (!email || !password) {
       setError('이메일과 비밀번호를 입력해주세요');
       return;
@@ -59,140 +40,97 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    // 로그인 처리
-    const result = login(email, password);
-
-    if (result.success) {
-      // 로그인 성공 - 메인 페이지로 이동
+    try {
+      // Firebase 로그인
+      await signIn(email, password);
+      
+      // 메인 페이지로 이동
       router.push('/');
-    } else {
-      // 로그인 실패 - 오류 메시지 표시
-      setError(result.message);
+    } catch (err: any) {
+      setError(err.message || '로그인에 실패했습니다');
       setLoading(false);
     }
   };
 
   return (
-    <Container maxWidth="sm" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
-      <Paper
-        elevation={3}
-        sx={{
-          p: 4,
-          width: '100%',
-          borderRadius: 3,
-        }}
-      >
-        {/* 헤더 */}
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <LoginIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            로그인
+    <Container maxWidth="sm">
+      <Box sx={{ mt: 8, mb: 4 }}>
+        <Paper elevation={3} sx={{ p: 4 }}>
+          <Typography variant="h4" align="center" gutterBottom>
+            🏃‍♂️ 로그인
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            12주 건강관리를 시작하세요
+          <Typography variant="subtitle1" align="center" color="text.secondary" sx={{ mb: 4 }}>
+            12주 건강개선 프로그램 v3.0
           </Typography>
-        </Box>
 
-        {/* 오류 메시지 */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
-            {error}
-          </Alert>
-        )}
+          {/* 에러 메시지 */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
+              {error}
+            </Alert>
+          )}
 
-        {/* 로그인 폼 */}
-        <form onSubmit={handleSubmit}>
-          {/* 이메일 입력 */}
-          <TextField
-            fullWidth
-            label="이메일"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="example@email.com"
-            sx={{ mb: 2 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Email color="action" />
-                </InputAdornment>
-              ),
-            }}
-          />
+          {/* 로그인 폼 */}
+          <form onSubmit={handleSubmit}>
+            <TextField
+              label="이메일"
+              type="email"
+              fullWidth
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              sx={{ mb: 2 }}
+              autoComplete="email"
+              disabled={loading}
+            />
+            <TextField
+              label="비밀번호"
+              type="password"
+              fullWidth
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              sx={{ mb: 3 }}
+              autoComplete="current-password"
+              disabled={loading}
+            />
 
-          {/* 비밀번호 입력 */}
-          <TextField
-            fullWidth
-            label="비밀번호"
-            type={showPassword ? 'text' : 'password'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="최소 6자 이상"
-            sx={{ mb: 3 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Lock color="action" />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              size="large"
+              disabled={loading}
+              startIcon={loading && <CircularProgress size={20} />}
+              sx={{ mb: 2 }}
+            >
+              {loading ? '로그인 중...' : '로그인'}
+            </Button>
 
-          {/* 로그인 버튼 */}
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            size="large"
-            disabled={loading}
-            sx={{
-              py: 1.5,
-              fontWeight: 'bold',
-              mb: 2,
-            }}
-          >
-            {loading ? '로그인 중...' : '로그인'}
-          </Button>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="body2">
+                계정이 없으신가요?{' '}
+                <MuiLink component={Link} href="/signup" sx={{ cursor: 'pointer' }}>
+                  회원가입
+                </MuiLink>
+              </Typography>
+            </Box>
+          </form>
 
-          {/* 회원가입 링크 */}
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              계정이 없으신가요?{' '}
-              <MuiLink
-                component={Link}
-                href="/signup"
-                sx={{
-                  fontWeight: 'bold',
-                  textDecoration: 'none',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                회원가입
-              </MuiLink>
+          {/* Firebase 연동 안내 */}
+          <Box sx={{ mt: 4, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
+            <Typography variant="body2" color="info.contrastText">
+              💡 <strong>v3.0 새로운 기능</strong>
+              <br />
+              • 클라우드 동기화 (여러 기기에서 접속 가능)
+              <br />
+              • 실시간 데이터 업데이트
+              <br />
+              • 안전한 데이터 백업
             </Typography>
           </Box>
-        </form>
-
-        {/* 데모 계정 안내 (개발용) */}
-        <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-          <Typography variant="caption" color="text.secondary">
-            💡 <strong>개발 팁:</strong> 실제 서비스에서는 비밀번호를 암호화(해시)하여 저장해야 합니다.
-            현재는 학습 목적으로 평문 저장을 사용하고 있습니다.
-          </Typography>
-        </Box>
-      </Paper>
+        </Paper>
+      </Box>
     </Container>
   );
 }
