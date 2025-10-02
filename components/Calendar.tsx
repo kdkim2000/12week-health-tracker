@@ -1,5 +1,4 @@
-// 파일 경로: components/Calendar.tsx
-// 설명: v2.0 달력 - Phase별 색상 구분, 완료율 기반 상태
+// E:\apps\12week-health-tracker\components\Calendar.tsx
 
 'use client';
 
@@ -36,7 +35,7 @@ interface CalendarProps {
  * - 완료율 기반 상태 표시 (80% 이상: excellent, 50-79%: good, etc.)
  * - 12개 항목 기반 완료율 계산
  */
-export default function Calendar({ dates, dailyChecks, onSaveCheck }: CalendarProps) {
+export default function Calendar({ dates = [], dailyChecks = {}, onSaveCheck }: CalendarProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   /**
@@ -144,7 +143,19 @@ export default function Calendar({ dates, dailyChecks, onSaveCheck }: CalendarPr
 
   const handleSaveCheck = (check: DailyCheck) => {
     onSaveCheck(check);
+    setSelectedDate(null); // 저장 후 다이얼로그 닫기
   };
+
+  // dates가 비어있으면 안내 메시지 표시
+  if (!dates || dates.length === 0) {
+    return (
+      <Paper elevation={2} sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="h6" color="text.secondary">
+          달력을 불러오는 중...
+        </Typography>
+      </Paper>
+    );
+  }
 
   // 주차별 그룹화
   const weeks: string[][] = [];
@@ -228,7 +239,7 @@ export default function Calendar({ dates, dailyChecks, onSaveCheck }: CalendarPr
                   const completionRate = calculateCompletionRate(date);
 
                   return (
-                    <Grid size="auto" sx={{ width: `${100/8}%` }} key={date}>
+                    <Grid size="auto" sx={{ width: `${100/7}%` }} key={date}>
                       <Tooltip
                         title={
                           <Box>
@@ -258,7 +269,7 @@ export default function Calendar({ dates, dailyChecks, onSaveCheck }: CalendarPr
                             border: today ? '3px solid #2196F3' : 'none',
                             position: 'relative',
                             '&:hover': {
-                              transform: isFuture(date) ? 'none' : 'scale(1.1)',
+                              transform: isFuture(date) ? 'none' : 'scale(1.05)',
                               boxShadow: isFuture(date) ? 1 : 6,
                             },
                           }}
@@ -320,7 +331,7 @@ export default function Calendar({ dates, dailyChecks, onSaveCheck }: CalendarPr
         {/* 안내 */}
         <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="body2" color="text.secondary">
-            💡 <strong>Phase별 색상:</strong> Phase 1(초록), Phase 2(주황), Phase 3(파랑)으로 구분됩니다.
+            Phase별 색상: Phase 1(초록), Phase 2(주황), Phase 3(파랑)으로 구분됩니다.
             날짜를 클릭하여 12개 항목을 체크하세요!
           </Typography>
         </Box>

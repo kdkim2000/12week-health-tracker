@@ -1,3 +1,4 @@
+// E:\apps\12week-health-tracker\lib\dateUtils.ts
 // 파일 경로: lib/dateUtils.ts
 // 설명: 날짜 계산 및 포맷팅 관련 유틸리티 함수
 
@@ -64,16 +65,44 @@ export function daysBetween(date1: string, date2: string): number {
 }
 
 /**
+ * 시작 날짜로부터 현재 주차 계산 (1~12주)
+ * @param startDate - 프로그램 시작 날짜 (Date 객체 또는 YYYY-MM-DD 문자열)
+ * @returns 현재 주차 (1~12, 12 이상은 12로 고정)
+ * 
+ * 예시: 
+ * - 시작일이 오늘이면 → 1주차
+ * - 시작일로부터 7일 후면 → 2주차
+ * - 시작일로부터 84일 후면 → 12주차
+ */
+export function getCurrentWeek(startDate: Date | string): number {
+  // Date 객체를 문자열로 변환
+  const startDateStr = startDate instanceof Date ? formatDate(startDate) : startDate;
+  const todayStr = getTodayString();
+  
+  // 경과 일수 계산
+  const days = daysBetween(startDateStr, todayStr);
+  
+  // 주차 계산 (1주차부터 시작)
+  const weekNumber = Math.floor(days / 7) + 1;
+  
+  // 최소 1주차, 최대 12주차
+  return Math.max(1, Math.min(weekNumber, 12));
+}
+
+/**
  * 12주 프로그램의 모든 날짜 배열 생성
- * @param startDate - 프로그램 시작일 (YYYY-MM-DD)
+ * @param startDate - 프로그램 시작일 (Date 객체 또는 YYYY-MM-DD 문자열)
  * @returns 84일간의 날짜 문자열 배열
  * 
  * 예시: get12WeekDates('2025-01-01') → ['2025-01-01', '2025-01-02', ..., '2025-03-25']
  */
-export function get12WeekDates(startDate: string): string[] {
+export function get12WeekDates(startDate: Date | string): string[] {
+  // Date 객체를 문자열로 변환
+  const startDateStr = startDate instanceof Date ? formatDate(startDate) : startDate;
+  
   const dates: string[] = [];
   for (let i = 0; i < 84; i++) { // 12주 = 84일
-    dates.push(addDays(startDate, i));
+    dates.push(addDays(startDateStr, i));
   }
   return dates;
 }
@@ -145,4 +174,42 @@ export function getDayName(date: string): string {
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
   const dateObj = parseDate(date);
   return dayNames[dateObj.getDay()];
+}
+
+/**
+ * 프로그램 진행률 계산 (0~100)
+ * @param startDate - 프로그램 시작 날짜 (Date 객체 또는 YYYY-MM-DD 문자열)
+ * @returns 진행률 퍼센트 (0~100)
+ * 
+ * 예시: 6주차일 경우 → 50%
+ */
+export function getProgressPercentage(startDate: Date | string): number {
+  const currentWeek = getCurrentWeek(startDate);
+  return Math.min(Math.round((currentWeek / 12) * 100), 100);
+}
+
+/**
+ * 프로그램 종료일 계산
+ * @param startDate - 프로그램 시작 날짜 (Date 객체 또는 YYYY-MM-DD 문자열)
+ * @returns 종료 날짜 문자열 (YYYY-MM-DD)
+ * 
+ * 예시: getEndDate('2025-01-01') → '2025-03-25'
+ */
+export function getEndDate(startDate: Date | string): string {
+  const startDateStr = startDate instanceof Date ? formatDate(startDate) : startDate;
+  return addDays(startDateStr, 83); // 12주 = 84일 (0일째부터 83일째까지)
+}
+
+/**
+ * 프로그램 남은 일수 계산
+ * @param startDate - 프로그램 시작 날짜 (Date 객체 또는 YYYY-MM-DD 문자열)
+ * @returns 남은 일수 (음수면 0 반환)
+ * 
+ * 예시: 프로그램 중간이면 → 42일 정도
+ */
+export function getRemainingDays(startDate: Date | string): number {
+  const endDateStr = getEndDate(startDate);
+  const todayStr = getTodayString();
+  const remaining = daysBetween(todayStr, endDateStr);
+  return Math.max(remaining, 0);
 }

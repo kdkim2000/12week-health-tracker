@@ -1,263 +1,305 @@
-// 파일 경로: app/page.tsx
-// 설명: v2.0 메인 대시보드 - Phase별 프로그레스, 차트, 통계
+// E:\apps\12week-health-tracker\app\page.tsx
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Container,
   Box,
-  AppBar,
-  Toolbar,
+  Container,
   Typography,
-  IconButton,
-  Menu,
-  MenuItem,
-  CircularProgress,
   Button,
+  CircularProgress,
+  Alert,
+  Paper,
 } from '@mui/material';
-import { AccountCircle, ExitToApp, FitnessCenter, MenuBook } from '@mui/icons-material';
-import { getCurrentUser, getAllDailyChecks, logout, saveDailyCheck } from '@/lib/localStorage';
-import { get12WeekDates, getWeekNumber, getTodayString } from '@/lib/dateUtils';
-import { getPhaseFromWeek } from '@/lib/programData';
-import type { User, DailyCheck, WeeklyStats as WeeklyStatsType, ChartDataPoint } from '@/types';
 import Calendar from '@/components/Calendar';
+import ProgressBar from '@/components/ProgressBar';
+import WeeklyStats from '@/components/WeeklyStats';
 import PhaseIndicator from '@/components/PhaseIndicator';
 import HealthMetrics from '@/components/HealthMetrics';
-import WeeklyStats from '@/components/WeeklyStats';
+import {
+  onAuthStateChange,
+  logOut,
+  getUserProfile,
+  subscribeToDailyChecks,
+  saveDailyCheck,
+} from '@/lib/firebase';
+import { User, DailyCheck, ChartDataPoint } from '@/types';
+import { getCurrentWeek, get12WeekDates, formatDate, getWeekDates } from '@/lib/dateUtils';
+import { getPhaseFromWeek } from '@/lib/programData';
 
-/**
- * HomePage v2.0
- * 
- * 새로운 구조:
- * 1. Phase Indicator (현재 Phase 표시)
- * 2. Health Metrics (체중/허리둘레 차트)
- * 3. Calendar (12주 달력)
- * 4. Weekly Stats (주차별 통계)
- */
+interface WeeklyStatsData {
+  weekNumber: number;
+  phase: number;
+  achievementRate: number;
+  mealCompletionRate: number;
+  waterAverageIntake: number;
+  exerciseDays: number;
+  totalExerciseMinutes: number;
+  weightChange?: number;
+}
+
 export default function HomePage() {
   const router = useRouter();
-
+  
   const [user, setUser] = useState<User | null>(null);
+  const [dailyChecks, setDailyChecks] = useState<Record<string, DailyCheck>>({});
   const [loading, setLoading] = useState(true);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('synced');
 
-  useEffect(() => {
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      router.push('/login');
-    } else {
-      setUser(currentUser);
-      setLoading(false);
+  const chartData = useMemo<ChartDataPoint[]>(() => {
+    if (!user) return [];
+
+    const data: ChartDataPoint[] = [];
+    
+    Object.keys(dailyChecks).forEach((date) => {
+      const check = dailyChecks[date];
+      if (check && (check.weight !== undefined || check.waist !== undefined)) {
+        data.push({
+          date,
+          weight: check.weight,
+          waist: check.waist,
+        });
+      }
+    });
+
+    return data.sort((a, b) => a.date.localeCompare(b.date));
+  }, [user, dailyChecks]);
+
+  const weeklyData = useMemo<WeeklyStatsData[]>(() => {
+    if (!user) return [];
+
+    const stats: WeeklyStatsData[] = [];
+
+    for (let week = 1; week <= 12; week++) {
+      const weekDates = getWeekDates(
+        typeof user.startDate === 'string' ? user.startDate : formatDate(user.startDate),
+        week
+      );
+      
+      const weekChecks = weekDates
+        .map(date => dailyChecks[date])
+        .filter(check => check !== undefined);
+
+      const completedCount = weekChecks.filter(check => check.completed).length;
+      const mealCompletedCount = weekChecks.filter(check => check.meals).length;
+      const mealRate = weekChecks.length > 0 ? (mealCompletedCount / weekChecks.length) * 100 : 0;
+      const waterTotal = weekChecks.reduce((sum, check) => sum + (check.water || 0), 0);
+      const waterAvg = weekChecks.length > 0 ? waterTotal / weekChecks.length : 0;
+      const exerciseDaysCount = weekChecks.filter(check => check.exercise).length;
+      const totalMinutes = weekChecks.reduce((sum, check) => {
+        if (check.exercise) {
+          const match = check.exercise.match(/(\d+)분/);
+          return sum + (match ? parseInt(match[1]) : 0);
+        }
+        return sum;
+      }, 0);
+
+      const weekWeights = weekChecks
+        .map(check => check.weight)
+        .filter(w => w !== undefined) as number[];
+      
+      let weightChange: number | undefined;
+      if (weekWeights.length >= 2) {
+        weightChange = weekWeights[0] - weekWeights[weekWeights.length - 1];
+      }
+
+      const achievementRate = weekChecks.length > 0 ? (completedCount / weekChecks.length) * 100 : 0;
+
+      stats.push({
+        weekNumber: week,
+        phase: getPhaseFromWeek(week),
+        achievementRate,
+        mealCompletionRate: mealRate,
+        waterAverageIntake: waterAvg,
+        exerciseDays: exerciseDaysCount,
+        totalExerciseMinutes: totalMinutes,
+        weightChange,
+      });
     }
+
+    return stats;
+  }, [user, dailyChecks]);
+
+  // 인증 상태 및 실시간 동기화 - 중복 구독 방지
+  useEffect(() => {
+    let unsubscribeChecks: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChange(async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const userProfile = await getUserProfile(firebaseUser.uid);
+          
+          if (userProfile) {
+            setUser(userProfile);
+
+            // 기존 구독 해제 (중복 방지)
+            if (unsubscribeChecks) {
+              unsubscribeChecks();
+            }
+
+            setSyncStatus('syncing');
+            unsubscribeChecks = subscribeToDailyChecks(
+              firebaseUser.uid,
+              (checks) => {
+                setDailyChecks(checks);
+                setSyncStatus('synced');
+              }
+            );
+          } else {
+            console.error('사용자 프로필을 찾을 수 없습니다');
+            router.push('/login');
+          }
+        } catch (error) {
+          console.error('사용자 정보 로딩 실패:', error);
+          setSyncStatus('error');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+        router.push('/login');
+      }
+    });
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeChecks) {
+        unsubscribeChecks();
+      }
+    };
   }, [router]);
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await logOut();
+      router.push('/login');
+    } catch (error) {
+      console.error('로그아웃 실패:', error);
+    }
   };
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleSaveCheck = (check: DailyCheck) => {
+  // useCallback으로 메모이제이션 - date 파라미터 제거
+  const handleSaveDailyCheck = useCallback(async (check: DailyCheck) => {
     if (!user) return;
-    saveDailyCheck(user.id, check);
-    setUser({ ...user });
-  };
 
-  // 로딩
+    setSyncStatus('syncing');
+    try {
+      await saveDailyCheck(user.id, check);
+    } catch (error) {
+      console.error('❌ 일일 체크 저장 실패:', error);
+      setSyncStatus('error');
+    }
+  }, [user]);
+
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress />
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+        }}
+      >
+        <CircularProgress size={60} />
       </Box>
     );
   }
 
-  if (!user) return null;
-
-  // 데이터 계산
-  const dates = get12WeekDates(user.startDate);
-  const dailyChecks = getAllDailyChecks(user.id);
-  const currentWeek = getWeekNumber(user.startDate, getTodayString()) || 1;
-  const currentPhase = getPhaseFromWeek(currentWeek);
-
-  // 차트 데이터 생성 (체중/허리둘레가 있는 날짜만)
-  const chartData: ChartDataPoint[] = dates
-    .filter((date) => {
-      const check = dailyChecks[date];
-      return check && (check.weight || check.waistCircumference);
-    })
-    .map((date) => {
-      const check = dailyChecks[date];
-      const [, month, day] = date.split('-');
-      return {
-        date: `${parseInt(month)}/${parseInt(day)}`,
-        weight: check.weight,
-        waist: check.waistCircumference,
-        targetWeight: user.targetWeight,
-        targetWaist: user.targetWaist,
-      };
-    });
-
-  // 주차별 통계 계산
-  const weeklyStats: WeeklyStatsType[] = [];
-  for (let week = 1; week <= 12; week++) {
-    const weekStart = (week - 1) * 7;
-    const weekDates = dates.slice(weekStart, weekStart + 7);
-    const phase = getPhaseFromWeek(week);
-
-    let totalMeals = 0;
-    let completedMeals = 0;
-    let totalWater = 0;
-    let exerciseDays = 0;
-    let totalExerciseMinutes = 0;
-    let weightMeasurements: number[] = [];
-    let waistMeasurements: number[] = [];
-    let totalCompletionRate = 0;
-
-    weekDates.forEach((date) => {
-      const check = dailyChecks[date];
-      if (check) {
-        // 식사
-        totalMeals += 3;
-        if (check.breakfastCompleted) completedMeals++;
-        if (check.lunchCompleted) completedMeals++;
-        if (check.dinnerCompleted) completedMeals++;
-
-        // 물
-        totalWater += check.waterIntake;
-
-        // 운동
-        if (check.exerciseCompleted) {
-          exerciseDays++;
-          if (check.exerciseDuration) {
-            totalExerciseMinutes += check.exerciseDuration;
-          }
-        }
-
-        // 신체 측정
-        if (check.weight) weightMeasurements.push(check.weight);
-        if (check.waistCircumference) waistMeasurements.push(check.waistCircumference);
-
-        // 완료율 계산
-        let itemsCompleted = 0;
-        if (check.breakfastCompleted) itemsCompleted++;
-        if (check.lunchCompleted) itemsCompleted++;
-        if (check.dinnerCompleted) itemsCompleted++;
-        if (check.waterIntake >= 8) itemsCompleted++;
-        if (check.exerciseCompleted) itemsCompleted++;
-        if (check.sleepHours) itemsCompleted++;
-        if (check.weight) itemsCompleted++;
-        if (check.waistCircumference) itemsCompleted++;
-        totalCompletionRate += (itemsCompleted / 8) * 100;
-      }
-    });
-
-    const daysWithData = weekDates.filter((d) => dailyChecks[d]).length;
-    const achievementRate = daysWithData > 0 ? totalCompletionRate / daysWithData : 0;
-
-    weeklyStats.push({
-      weekNumber: week,
-      phase,
-      mealCompletionRate: totalMeals > 0 ? (completedMeals / totalMeals) * 100 : 0,
-      waterAverageIntake: daysWithData > 0 ? totalWater / 7 : 0,
-      exerciseDays,
-      totalExerciseMinutes,
-      averageWeight: weightMeasurements.length > 0
-        ? weightMeasurements.reduce((a, b) => a + b, 0) / weightMeasurements.length
-        : undefined,
-      averageWaist: waistMeasurements.length > 0
-        ? waistMeasurements.reduce((a, b) => a + b, 0) / waistMeasurements.length
-        : undefined,
-      weightChange: weightMeasurements.length > 0
-        ? user.initialWeight - weightMeasurements[weightMeasurements.length - 1]
-        : undefined,
-      waistChange: waistMeasurements.length > 0
-        ? user.initialWaist - waistMeasurements[waistMeasurements.length - 1]
-        : undefined,
-      achievementRate,
-    });
+  if (!user) {
+    return null;
   }
 
+  const currentWeek = getCurrentWeek(user.startDate);
+  const currentPhase = getPhaseFromWeek(currentWeek);
+
   return (
-    <>
-      {/* 상단 앱바 */}
-      <AppBar position="sticky" elevation={2}>
-        <Toolbar>
-          <FitnessCenter sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-            12주 건강개선 v2.0
+    <Container maxWidth="lg">
+      <Box sx={{ py: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          <Typography variant="h4" gutterBottom>
+            🏃‍♂️ 12주 건강개선 프로그램
           </Typography>
-
-          {/* 프로그램 보기 버튼 */}
-          <Button
-            color="inherit"
-            startIcon={<MenuBook />}
-            onClick={() => router.push('/program')}
-            sx={{ mr: 2 }}
-          >
-            프로그램
+          <Typography variant="subtitle1" color="text.secondary">
+            {user.email}
+            {user.startDate && (
+              <> • 시작일: {typeof user.startDate === 'string' ? user.startDate : formatDate(user.startDate)}</>
+            )}
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          {syncStatus === 'syncing' && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CircularProgress size={16} />
+              <Typography variant="body2" color="text.secondary">
+                동기화 중...
+              </Typography>
+            </Box>
+          )}
+          {syncStatus === 'synced' && (
+            <Typography variant="body2" color="success.main">
+              ✓ 동기화 완료
+            </Typography>
+          )}
+          {syncStatus === 'error' && (
+            <Typography variant="body2" color="error.main">
+              ⚠ 동기화 오류
+            </Typography>
+          )}
+          
+          <Button variant="outlined" onClick={() => router.push('/program')}>
+            프로그램 가이드
           </Button>
-
-          {/* 사용자 메뉴 */}
-          <Box>
-            <IconButton color="inherit" onClick={handleMenuOpen}>
-              <AccountCircle />
-            </IconButton>
-            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-              <MenuItem disabled>
-                <Typography variant="body2">{user.email}</Typography>
-              </MenuItem>
-              <MenuItem onClick={handleLogout}>
-                <ExitToApp sx={{ mr: 1 }} fontSize="small" />
-                로그아웃
-              </MenuItem>
-            </Menu>
-          </Box>
-        </Toolbar>
-      </AppBar>
-
-      {/* 메인 컨텐츠 */}
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* 환영 메시지 */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            안녕하세요, {user.email.split('@')[0]}님!
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            {currentWeek}주차를 맞이했습니다. 오늘도 건강한 하루 보내세요!
-          </Typography>
+          <Button variant="outlined" color="error" onClick={handleLogout}>
+            로그아웃
+          </Button>
         </Box>
+      </Box>
 
-        {/* Phase Indicator */}
-        <PhaseIndicator currentWeek={currentWeek} currentPhase={currentPhase} />
+      <Alert severity="info" sx={{ mb: 3 }}>
+        <Typography variant="body2">
+          <strong>🎉 v3.0 Firebase 클라우드 동기화 적용!</strong>
+          <br />
+          • 여러 기기에서 동일한 계정으로 접속 가능
+          <br />
+          • 데이터가 실시간으로 자동 동기화됩니다
+          <br />
+          • 안전한 클라우드 백업
+        </Typography>
+      </Alert>
 
-        {/* Health Metrics (차트) */}
-        <HealthMetrics user={user} chartData={chartData} />
+      <PhaseIndicator currentWeek={currentWeek} currentPhase={currentPhase} />
+      <ProgressBar currentWeek={currentWeek} totalWeeks={12} />
+      <HealthMetrics user={user} chartData={chartData} />
+      <WeeklyStats weeklyData={weeklyData} currentWeek={currentWeek} />
 
-        {/* 12주 달력 */}
-        <Box sx={{ mb: 4 }}>
-          <Calendar dates={dates} dailyChecks={dailyChecks} onSaveCheck={handleSaveCheck} />
-        </Box>
+      {/* Calendar - 올바른 props 전달 */}
+      <Calendar
+        dates={get12WeekDates(
+          typeof user.startDate === 'string' ? user.startDate : formatDate(user.startDate)
+        )}
+        dailyChecks={dailyChecks}
+        onSaveCheck={handleSaveDailyCheck}
+      />
 
-        {/* 주차별 통계 */}
-        <WeeklyStats weeklyData={weeklyStats} currentWeek={currentWeek} />
+      {/* DailyCheckForm 제거 - Calendar 내부 Dialog 사용 */}
 
-        {/* 푸터 */}
-        <Box sx={{ mt: 4, p: 3, bgcolor: 'grey.50', borderRadius: 2 }}>
-          <Typography variant="body2" color="text.secondary" align="center">
-            시작일: {user.startDate} | 목표: 체중 {user.targetWeight}kg, 허리둘레 {user.targetWaist}cm
+      {process.env.NODE_ENV === 'development' && (
+        <Paper sx={{ p: 2, mt: 3, bgcolor: 'grey.100' }}>
+          <Typography variant="caption" component="pre" sx={{ whiteSpace: 'pre-wrap' }}>
+            Debug Info:
+            {'\n'}User ID: {user.id}
+            {'\n'}Start Date: {typeof user.startDate === 'string' ? user.startDate : formatDate(user.startDate)}
+            {'\n'}Current Week: {currentWeek}
+            {'\n'}Checks Count: {Object.keys(dailyChecks).length}
+            {'\n'}Chart Data Points: {chartData.length}
+            {'\n'}Weekly Stats Count: {weeklyData.length}
+            {'\n'}Sync Status: {syncStatus}
           </Typography>
-        </Box>
-      </Container>
-    </>
+        </Paper>
+      )}
+    </Container>
   );
 }
