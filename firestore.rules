@@ -1,0 +1,96 @@
+// firestore.rules
+// 12week-health-tracker v3.0 보안 규칙
+// 플랫 구조: dailyChecks 컬렉션에 직접 문서 저장
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // 헬퍼 함수
+    // ============================================
+    
+    // 인증된 사용자인지 확인
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // 사용자 본인인지 확인
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // ============================================
+    // users 컬렉션 (사용자 프로필)
+    // ============================================
+    match /users/{userId} {
+      // 읽기: 본인만 가능
+      allow read: if isOwner(userId);
+      
+      // 쓰기: 본인만 가능
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+    
+    // ============================================
+    // dailyChecks 컬렉션 (플랫 구조)
+    // 문서 ID 형식: {userId}_{date}
+    // ============================================
+    match /dailyChecks/{documentId} {
+      // documentId에서 userId 추출 (형식: userId_YYYY-MM-DD)
+      function getOwnerIdFromDocId() {
+        // documentId를 '_'로 split하고 첫 번째 부분이 userId
+        // 예: "user123_2024-01-01" → "user123"
+        return documentId.split('_')[0];
+      }
+      
+      // resource.data.userId와 request.auth.uid 비교
+      function isDataOwner() {
+        return isAuthenticated() && 
+               resource.data.userId == request.auth.uid;
+      }
+      
+      // request.resource.data.userId와 request.auth.uid 비교 (생성/수정 시)
+      function isRequestDataOwner() {
+        return isAuthenticated() && 
+               request.resource.data.userId == request.auth.uid;
+      }
+      
+      // documentId 패턴 검증 (userId_YYYY-MM-DD)
+      function isValidDocumentId() {
+        return documentId.matches('^[a-zA-Z0-9]+_[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+      }
+      
+      // 읽기: 본인 데이터만 가능
+      allow read: if isAuthenticated() && 
+                     (getOwnerIdFromDocId() == request.auth.uid || 
+                      isDataOwner());
+      
+      // 생성: 본인 데이터만 가능 + documentId 형식 검증
+      allow create: if isAuthenticated() && 
+                       isValidDocumentId() &&
+                       getOwnerIdFromDocId() == request.auth.uid &&
+                       isRequestDataOwner();
+      
+      // 수정: 본인 데이터만 가능
+      allow update: if isAuthenticated() && 
+                       (getOwnerIdFromDocId() == request.auth.uid || 
+                        isDataOwner()) &&
+                       isRequestDataOwner();
+      
+      // 삭제: 본인 데이터만 가능
+      allow delete: if isAuthenticated() && 
+                       (getOwnerIdFromDocId() == request.auth.uid || 
+                        isDataOwner());
+    }
+    
+    // ============================================
+    // 기타 모든 컬렉션 접근 거부
+    // ============================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
