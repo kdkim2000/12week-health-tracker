@@ -1,554 +1,477 @@
-# 🏃‍♂️ 12주 건강관리 체크리스트
+# 🏃‍♂️ 12주 건강개선 프로그램 v2.0
 
 [![Live Demo](https://img.shields.io/badge/demo-live-success)](https://kdkim2000.github.io/12week-health-tracker/)
-[![Next.js](https://img.shields.io/badge/Next.js-15.5.4-black)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.1.0-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.0.0-blue)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6+-blue)](https://www.typescriptlang.org/)
 [![Material-UI](https://img.shields.io/badge/MUI-7.0.0-007FFF)](https://mui.com/)
+[![Recharts](https://img.shields.io/badge/Recharts-2.12.7-8884d8)](https://recharts.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-> **🎓 Next.js 초보자를 위한 실전 프로젝트**  
-> 12주간의 운동습관과 생활지표를 기록하고 관리하는 웹 애플리케이션을 만들면서  
-> Next.js의 핵심 개념과 실전 개발 경험을 쌓을 수 있습니다.
+> **🎓 Next.js 초보자를 위한 실전 프로젝트 v2.0**  
+> 개인 맞춤형 12주 건강개선 프로그램을 기록하고 추적하는 웹 애플리케이션입니다.  
+> 체중 감량, 허리둘레 관리, 생활습관 개선을 과학적으로 관리하세요!
 
 ---
 
-## 🌐 라이브 데모
+## 🌟 v2.0의 새로운 기능
 
-👉 **[https://kdkim2000.github.io/12week-health-tracker/](https://kdkim2000.github.io/12week-health-tracker/)**
+### 🎯 주요 업그레이드
 
-지금 바로 접속하여 체험해보세요! 회원가입 후 12주 건강관리를 시작할 수 있습니다.
+#### 1. **12개 항목 체크리스트** (기존 3개 → 12개)
+```
+v1.0: ✅ 운동 / 🍎 식단 / ⚖️ 체중
+
+v2.0: 
+  📋 식사 관리 (아침/점심/저녁 + 시간 기록)
+  💧 물 섭취 추적 (0-8잔 슬라이더)
+  💪 운동 기록 (종류 + 시간)
+  😴 수면 시간 입력
+  ⚖️ 체중 측정
+  📏 허리둘레 측정
+  😊 컨디션 체크 (1-10)
+  📝 자유 메모
+```
+
+#### 2. **Phase 시스템** (12주를 3단계로 구분)
+```
+Phase 1 (1-4주)  🟢 기초 다지기
+- 목표: 운동 습관 형성, 칼로리 조절
+- 운동: 주 5-6회, 하루 30-40분
+- 식단: 일일 2,000kcal
+
+Phase 2 (5-8주)  🟠 강도 증가
+- 목표: 체중 감량 가속화, HIIT 도입
+- 운동: 주 6회, 하루 40-50분
+- 식단: 일일 1,800kcal
+
+Phase 3 (9-12주) 🔵 목표 달성
+- 목표: 목표 체중 달성, 습관 정착
+- 운동: 주 6회, 하루 45-60분
+- 식단: 일일 1,900kcal
+```
+
+#### 3. **건강 지표 차트** (신규)
+- 📊 체중 추이 그래프 (recharts)
+- 📏 허리둘레 변화 추이
+- 🎯 목표선 표시
+- 📈 실시간 변화량 계산
+
+#### 4. **프로그램 가이드 페이지** (신규)
+- 📅 주차별 운동 스케줄
+- 🍽️ 식단 가이드 (7일 메뉴)
+- 🎯 주간 목표 설정
+- 💡 단계별 팁 제공
 
 ---
 
 ## 📖 목차
 
+- [v2.0 주요 변경사항](#-v20-주요-변경사항)
 - [프로젝트 소개](#-프로젝트-소개)
-- [주요 기능](#-주요-기능)
 - [기술 스택](#-기술-스택)
-- [학습 포인트](#-학습-포인트---이-프로젝트에서-배울-수-있는-것들)
+- [학습 포인트](#-학습-포인트)
 - [시작하기](#-시작하기)
 - [프로젝트 구조](#-프로젝트-구조)
 - [핵심 구현 설명](#-핵심-구현-설명)
+- [v1.0에서 v2.0으로 업그레이드](#-v10에서-v20으로-업그레이드)
 - [GitHub Pages 배포](#-github-pages-배포)
 - [트러블슈팅](#-트러블슈팅)
 - [향후 개선 방향](#-향후-개선-방향)
-- [기여하기](#-기여하기)
-- [라이선스](#-라이선스)
+
+---
+
+## 🆕 v2.0 주요 변경사항
+
+### 📊 데이터 구조 확장
+
+#### **타입 정의 변경** (`types/index.ts`)
+
+**v1.0:**
+```typescript
+interface DailyCheck {
+  date: string;
+  exerciseCompleted: boolean;
+  dietCompleted: boolean;
+  weight: number | null;
+}
+```
+
+**v2.0:**
+```typescript
+interface DailyCheck {
+  date: string;
+  
+  // 식사 (3개 → 시간 기록 포함)
+  breakfastCompleted: boolean;
+  breakfastTime?: string;
+  lunchCompleted: boolean;
+  lunchTime?: string;
+  dinnerCompleted: boolean;
+  dinnerTime?: string;
+  
+  // 물 섭취 (신규)
+  waterIntake: number;  // 0-8잔
+  
+  // 운동 (확장)
+  exerciseCompleted: boolean;
+  exerciseType?: string;      // 운동 종류
+  exerciseDuration?: number;  // 운동 시간(분)
+  
+  // 수면 (신규)
+  sleepHours?: number;
+  
+  // 신체 측정 (확장)
+  weight?: number;
+  waistCircumference?: number;  // 허리둘레
+  
+  // 컨디션 & 메모 (신규)
+  condition?: number;  // 1-10
+  memo?: string;
+}
+```
+
+#### **사용자 정보 확장** (`types/index.ts`)
+
+**v2.0 추가 필드:**
+```typescript
+interface User {
+  id: string;
+  email: string;
+  password: string;
+  startDate: string;
+  createdAt: string;
+  
+  // 🆕 v2.0 추가
+  initialWeight: number;    // 초기 체중
+  targetWeight: number;     // 목표 체중
+  initialWaist: number;     // 초기 허리둘레
+  targetWaist: number;      // 목표 허리둘레
+}
+```
+
+### 🎨 UI/UX 개선
+
+#### **1. 회원가입 프로세스 개선**
+
+**v1.0:** 이메일/비밀번호만 입력
+**v2.0:** 2단계 프로세스
+```
+Step 1: 계정 정보 (이메일/비밀번호)
+Step 2: 신체 정보 & 목표 설정
+  - 현재 체중 입력
+  - 현재 허리둘레 입력
+  - 목표 체중 설정
+  - 목표 허리둘레 설정
+```
+
+#### **2. 달력 시각화 강화**
+
+**v1.0 색상 시스템:**
+```
+🟢 초록: 모두 완료
+🟡 노랑: 일부 완료
+🔴 빨강: 미완료
+⚪ 회색: 미래
+```
+
+**v2.0 색상 시스템 (Phase별 구분):**
+```
+Phase 1 (1-4주):   🟢 초록색 계열
+Phase 2 (5-8주):   🟠 주황색 계열
+Phase 3 (9-12주):  🔵 파란색 계열
+
+완료율 표시:
+  80%+ : 진한 색상 (excellent)
+  50-79%: 중간 색상 (good)
+  20-49%: 노란색 (partial)
+  <20%  : 빨간색 (incomplete)
+```
+
+#### **3. 상세 통계 추가**
+
+**v2.0 주차별 통계:**
+```
+✅ 식사 완료율: 85%
+💧 평균 물 섭취: 7.2잔/일
+💪 운동 일수: 6일 (총 240분)
+⚖️ 체중 변화: -2.3kg
+📏 허리둘레 변화: -1.5cm
+📊 전체 달성률: 78%
+```
+
+### 📦 새로운 패키지 추가
+
+```bash
+npm install recharts  # 차트 라이브러리
+```
+
+**recharts 사용 이유:**
+- React 친화적 (컴포넌트 기반)
+- 반응형 차트 자동 지원
+- 간단한 API
+- TypeScript 지원
 
 ---
 
 ## 🎯 프로젝트 소개
 
-### 왜 이 프로젝트를 만들었나요?
+### 왜 v2.0을 만들었나요?
 
-**Next.js를 배우고 싶지만 어디서부터 시작해야 할지 막막한 분들을 위해** 제작되었습니다.
+**v1.0의 한계:**
+- 단순한 체크리스트 (2개 항목만)
+- 시각화 부족
+- 목표 설정 불가
+- 상세 통계 없음
 
-- 📚 **교육 목적**: 튜토리얼이 아닌 실제 사용 가능한 애플리케이션
-- 💪 **실생활 활용**: 본인의 건강관리에 실제로 사용 가능
-- 🔍 **코드 학습**: 각 파일마다 상세한 주석으로 Why & How 설명
-- 🚀 **배포 경험**: GitHub Actions를 통한 자동 배포까지 경험
+**v2.0의 개선:**
+- ✅ 포괄적인 건강 관리 (12개 항목)
+- ✅ 실시간 차트 시각화
+- ✅ 개인 맞춤 목표 설정
+- ✅ 과학적 Phase 시스템
+- ✅ 주차별 운동/식단 가이드
 
-### 어떤 앱인가요?
+### 어떤 사람에게 필요한가요?
 
-12주(84일)간의 **운동**, **식단**, **체중**을 매일 기록하고,  
-시각적으로 확인하며 건강한 습관을 만들어가는 웹 애플리케이션입니다.
+이 앱은 다음과 같은 분들을 위해 만들어졌습니다:
 
----
+1. **건강검진 결과 개선이 필요한 분**
+   - 체중 감량 필요
+   - 허리둘레 관리 필요
+   - HS-CRP 수치 개선 필요
 
-## ✨ 주요 기능
+2. **체계적인 건강 관리를 원하는 분**
+   - 운동 습관 형성
+   - 식단 관리
+   - 진행 상황 추적
 
-### 🔐 사용자 인증 시스템
-```
-회원가입 → 자동 로그인 → 12주 프로그램 시작
-```
-- 이메일/비밀번호 기반 인증
-- 로컬 스토리지를 활용한 데이터 저장
-- 로그인 상태 유지
-
-### 📅 일일 체크리스트
-매일 3가지를 기록할 수 있습니다:
-| 항목 | 설명 |
-|------|------|
-| ✅ 운동 완료 | 오늘 운동을 했나요? |
-| 🍎 식단 준수 | 계획한 식단을 지켰나요? |
-| ⚖️ 체중 기록 | 오늘의 체중은? (선택사항) |
-
-### 📊 시각화 대시보드
-
-#### 1. 12주 달력 뷰
-```
-┌─────────────────────────────────────┐
-│  1주차  [■][■][■][■][■][□][□]      │
-│  2주차  [■][■][■][○][○][  ][  ]    │
-│  3주차  [  ][  ][  ][  ][  ][  ][  ]│
-│  ...                                 │
-└─────────────────────────────────────┘
-
-■ 완료   ○ 일부 완료   □ 미완료   [  ] 미래
-```
-
-#### 2. 색상 코딩 시스템
-- 🟢 **초록색**: 운동 + 식단 모두 완료 (완벽!)
-- 🟡 **노란색**: 둘 중 하나만 완료 (괜찮아요!)
-- 🔴 **빨간색**: 아무것도 안 함 (힘내세요!)
-- ⚪ **회색**: 아직 오지 않은 날
-
-#### 3. 통계 분석
-- **전체 진행률**: 현재 몇 주차인지, 달성률은 몇 %인지
-- **주차별 달성률**: 각 주의 성과를 카드 형태로 표시
-- **실시간 업데이트**: 기록하면 즉시 반영
-
-### 📱 모바일 최적화
-- **반응형 디자인**: PC, 태블릿, 모바일 모두 지원
-- **터치 친화적**: 손가락으로 편하게 조작
-- **빠른 로딩**: 정적 사이트 생성으로 초고속
+3. **Next.js를 실전으로 배우고 싶은 개발자**
+   - 실제 사용 가능한 앱 제작
+   - 최신 기술 스택 학습
+   - 포트폴리오 프로젝트
 
 ---
 
 ## 🛠️ 기술 스택
 
 ### Core Technologies
-| 기술 | 버전 | 역할 |
-|------|------|------|
-| **Next.js** | 15.5.4 | React 프레임워크 (App Router) |
-| **React** | 19.0.0 | UI 라이브러리 |
-| **TypeScript** | 5.6+ | 타입 안정성 |
-| **Material-UI** | 7.0.0 | UI 컴포넌트 라이브러리 |
 
-### Infrastructure
-| 기술 | 용도 |
-|------|------|
-| **GitHub Actions** | CI/CD 자동화 |
-| **GitHub Pages** | 정적 사이트 호스팅 |
-| **Local Storage** | 브라우저 데이터 저장 |
+| 기술 | 버전 | 역할 | v2.0 변경사항 |
+|------|------|------|-------------|
+| **Next.js** | 15.1.0 | React 프레임워크 | - |
+| **React** | 19.0.0 | UI 라이브러리 | - |
+| **TypeScript** | 5.6+ | 타입 안정성 | - |
+| **Material-UI** | 7.0.0 | UI 컴포넌트 | - |
+| **Recharts** | 2.12.7 | 차트 라이브러리 | 🆕 **신규 추가** |
 
-### Why These Technologies?
+### v2.0 추가 기능
 
-#### 1. **Next.js를 선택한 이유**
-- ✅ React의 복잡한 설정을 자동화
-- ✅ 파일 기반 라우팅 (직관적!)
-- ✅ Server/Client Component 구분 학습
-- ✅ 정적 사이트 생성 (빠른 속도)
+#### **Recharts - 차트 시각화**
 
-#### 2. **TypeScript를 선택한 이유**
-- ✅ 코드 작성 중 오류 미리 발견
-- ✅ 자동완성으로 개발 속도 향상
-- ✅ 대규모 프로젝트에서 필수
+```typescript
+// 체중 추이 그래프 예시
+<LineChart data={chartData}>
+  <XAxis dataKey="date" />
+  <YAxis domain={[70, 85]} />
+  <Line 
+    dataKey="weight" 
+    stroke="#2196F3" 
+    strokeWidth={2}
+  />
+  <ReferenceLine 
+    y={targetWeight} 
+    stroke="#FF9800" 
+    label="목표"
+  />
+</LineChart>
+```
 
-#### 3. **Material-UI를 선택한 이유**
-- ✅ 구글의 Material Design 기반
-- ✅ 풍부한 컴포넌트 (버튼, 카드, 다이얼로그 등)
-- ✅ 반응형 디자인 자동 지원
-
-#### 4. **Local Storage를 선택한 이유**
-- ✅ 서버 없이 작동 (배포 간편)
-- ✅ 오프라인 지원
-- ✅ 초보자가 배우기 쉬움
+**왜 Recharts를 선택했나요?**
+- ✅ React 컴포넌트 방식 (직관적)
+- ✅ 반응형 차트 (모바일 자동 대응)
+- ✅ TypeScript 완벽 지원
+- ✅ 커스터마이징 쉬움
+- ✅ 번들 사이즈 작음 (~100KB)
 
 ---
 
-## 🎓 학습 포인트 - 이 프로젝트에서 배울 수 있는 것들
+## 🎓 학습 포인트
 
-### 1️⃣ Next.js 핵심 개념
+### v2.0에서 새롭게 배울 수 있는 것들
 
-#### **App Router (파일 기반 라우팅)**
-```
-app/
-├── layout.tsx          → 모든 페이지의 공통 레이아웃
-├── page.tsx            → / (메인 페이지)
-├── login/
-│   └── page.tsx        → /login
-└── signup/
-    └── page.tsx        → /signup
-```
+#### 1️⃣ **복잡한 폼 관리**
 
-**배울 수 있는 것:**
-- 폴더 구조 = URL 구조
-- `layout.tsx`로 공통 레이아웃 관리
-- `page.tsx`가 실제 페이지 컴포넌트
-
-**코드 예시:**
+**v1.0: 간단한 체크박스**
 ```typescript
-// app/login/page.tsx
-export default function LoginPage() {
-  return <div>로그인 페이지</div>;
-}
-// → 자동으로 /login URL에 매핑됨!
-```
-
-#### **Server Component vs Client Component**
-```typescript
-// Server Component (기본)
-// app/page.tsx
-export default function HomePage() {
-  // 서버에서만 실행됨
-  const data = await fetchData();
-  return <div>{data}</div>;
-}
-
-// Client Component
-// components/Calendar.tsx
-'use client'; // ← 이 선언이 핵심!
-export default function Calendar() {
-  const [state, setState] = useState([]); // Hook 사용 가능
-  return <div onClick={...}>...</div>; // 이벤트 처리 가능
-}
-```
-
-**언제 Client Component를 쓰나요?**
-- ✅ `useState`, `useEffect` 등 Hook 사용할 때
-- ✅ `onClick` 등 브라우저 이벤트 처리할 때
-- ✅ 브라우저 API (localStorage) 사용할 때
-
-**언제 Server Component를 쓰나요?**
-- ✅ 데이터 fetching만 하는 경우
-- ✅ 정적인 콘텐츠 표시
-- ✅ 기본값! (특별한 이유 없으면 Server Component)
-
-#### **Static Site Generation (SSG)**
-```typescript
-// next.config.ts
-export default {
-  output: 'export', // ← 이 설정으로 정적 HTML 생성
-};
-```
-
-**npm run build 실행 시:**
-```
-.next/ → out/ 폴더로 정적 파일 생성
-out/
-├── index.html          (메인 페이지)
-├── login.html          (로그인 페이지)
-├── _next/              (CSS, JS 파일들)
-└── ...
-```
-
-**장점:**
-- ⚡ 초고속 로딩 (미리 생성된 HTML)
-- 💰 서버 비용 0원 (GitHub Pages 무료)
-- 🔒 보안 우수 (서버 로직 없음)
-
----
-
-### 2️⃣ React 19 최신 기능
-
-#### **useState - 상태 관리**
-```typescript
-const [email, setEmail] = useState('');
-//     ↑현재값  ↑변경함수    ↑초기값
-
-// 사용 예시
-<input 
-  value={email} 
-  onChange={(e) => setEmail(e.target.value)}
+<Checkbox 
+  checked={exerciseCompleted}
+  onChange={(e) => setExerciseCompleted(e.target.checked)}
 />
 ```
 
-**실전 활용:**
-- 폼 입력값 관리
-- 모달 열기/닫기 상태
-- 로딩 상태 표시
-
-#### **useEffect - 부수 효과 처리**
+**v2.0: 다양한 입력 컴포넌트**
 ```typescript
-useEffect(() => {
-  // 컴포넌트가 마운트될 때 실행
-  const user = getCurrentUser();
-  if (!user) {
-    router.push('/login'); // 로그인 페이지로 이동
-  }
-}, []); // ← 빈 배열: 최초 1회만 실행
+// 체크박스 + 시간 입력
+{breakfastCompleted && (
+  <TextField
+    type="time"
+    value={breakfastTime}
+    onChange={(e) => setBreakfastTime(e.target.value)}
+  />
+)}
+
+// 슬라이더 (물 섭취)
+<Slider
+  value={waterIntake}
+  onChange={(_, value) => setWaterIntake(value)}
+  min={0}
+  max={8}
+  marks
+/>
+
+// 텍스트 영역 (메모)
+<TextField
+  multiline
+  rows={3}
+  value={memo}
+  onChange={(e) => setMemo(e.target.value)}
+/>
 ```
 
-**실전 활용:**
-- 컴포넌트 마운트 시 데이터 로드
-- 로그인 체크
-- 외부 API 호출
+**학습 포인트:**
+- 조건부 렌더링 마스터
+- 다양한 입력 타입 처리
+- 상태 동기화 관리
 
-#### **Custom Hooks 패턴**
+#### 2️⃣ **차트 데이터 가공**
+
+**원본 데이터 → 차트 데이터 변환:**
 ```typescript
-// lib/auth.ts
-export function login(email, password) {
-  // 로그인 로직
-  return { success: true, userId: '...' };
+// 원본 데이터
+dailyChecks = {
+  '2025-01-01': { weight: 83.6, waist: 87.7 },
+  '2025-01-08': { weight: 82.1, waist: 86.5 },
+  ...
 }
 
-// 컴포넌트에서 사용
-const result = login(email, password);
-if (result.success) {
-  router.push('/');
-}
+// 차트용 데이터로 변환
+const chartData: ChartDataPoint[] = dates
+  .filter(date => dailyChecks[date]?.weight) // 측정값 있는 날만
+  .map(date => ({
+    date: formatShortDate(date),  // "1/1"
+    weight: dailyChecks[date].weight,
+    waist: dailyChecks[date].waistCircumference,
+    targetWeight: user.targetWeight,
+    targetWaist: user.targetWaist,
+  }));
 ```
 
----
+**학습 포인트:**
+- 배열 메서드 체이닝 (filter → map)
+- 데이터 정규화
+- 효율적인 변환 로직
 
-### 3️⃣ TypeScript 실전 활용
+#### 3️⃣ **Phase별 동적 스타일링**
 
-#### **Interface로 타입 정의**
 ```typescript
-// types/index.ts
-export interface User {
-  id: string;
-  email: string;
-  password: string;
-  startDate: string;
-  createdAt: string;
-}
+// Phase 계산
+const getPhaseFromWeek = (week: number): Phase => {
+  if (week <= 4) return 1;
+  if (week <= 8) return 2;
+  return 3;
+};
 
-// 사용
-function getUser(id: string): User | null {
-  // id는 반드시 string
-  // 반환값은 User 또는 null
-}
-```
+// Phase별 색상 적용
+const PHASE_COLORS = {
+  1: '#4CAF50',  // 초록
+  2: '#FF9800',  // 주황
+  3: '#2196F3',  // 파랑
+};
 
-**왜 필요한가요?**
-- ✅ 실수로 다른 타입 전달 시 즉시 에러
-- ✅ 자동완성으로 개발 속도 2배
-- ✅ 리팩토링 시 안전성 보장
-
-#### **Props 타입 정의**
-```typescript
-interface CalendarProps {
-  dates: string[];
-  dailyChecks: { [date: string]: DailyCheck };
-  onSaveCheck: (check: DailyCheck) => void;
-}
-
-function Calendar({ dates, dailyChecks, onSaveCheck }: CalendarProps) {
-  // props 자동완성됨!
-  // 잘못된 props 전달 시 컴파일 에러
-}
-```
-
----
-
-### 4️⃣ Material-UI 컴포넌트 활용
-
-#### **Theme 설정**
-```typescript
-// app/theme.ts
-const theme = createTheme({
-  palette: {
-    primary: { main: '#2196F3' },    // 파란색
-    success: { main: '#4CAF50' },    // 초록색
-    warning: { main: '#FFC107' },    // 노란색
-  },
-});
-```
-
-**전역 스타일 적용:**
-```typescript
-// app/layout.tsx
-<ThemeProvider theme={theme}>
-  <CssBaseline /> {/* 브라우저 기본 스타일 초기화 */}
-  {children}
-</ThemeProvider>
-```
-
-#### **반응형 디자인**
-```typescript
-<Container maxWidth="lg">  {/* 큰 화면에서 최대 너비 제한 */}
-  <Grid container spacing={2}>
-    <Grid item xs={12} sm={6} md={4}>
-      {/* xs: 모바일 12칸 (전체) */}
-      {/* sm: 태블릿 6칸 (절반) */}
-      {/* md: 데스크톱 4칸 (1/3) */}
-    </Grid>
-  </Grid>
-</Container>
-```
-
-#### **sx prop으로 스타일링**
-```typescript
-<Box
+// 동적 스타일
+<Paper
   sx={{
-    p: 3,                    // padding: 24px (3 * 8px)
-    mb: 2,                   // margin-bottom: 16px
-    bgcolor: 'primary.main', // theme의 primary 색상
-    '&:hover': {             // hover 시 스타일
-      opacity: 0.8,
-    },
+    bgcolor: PHASE_COLORS[currentPhase],
+    color: 'white',
   }}
 >
-  ...
-</Box>
+  Phase {currentPhase}: {phaseInfo.title}
+</Paper>
 ```
 
----
+**학습 포인트:**
+- 조건부 스타일링
+- 동적 색상 시스템
+- 테마 확장
 
-### 5️⃣ 로컬 스토리지 활용
+#### 4️⃣ **완료율 계산 알고리즘**
 
-#### **데이터 구조**
-```javascript
-// 브라우저의 localStorage에 저장되는 구조
-{
-  "health-tracker-data": {
-    "currentUser": "user-123",
-    "users": {
-      "user-123": {
-        "id": "user-123",
-        "email": "user@example.com",
-        "password": "hashed",
-        "startDate": "2025-01-01"
-      }
-    },
-    "dailyChecks": {
-      "user-123": {
-        "2025-01-01": {
-          "date": "2025-01-01",
-          "exerciseCompleted": true,
-          "dietCompleted": true,
-          "weight": 70.5
-        }
-      }
-    }
-  }
-}
-```
-
-#### **CRUD 연산**
 ```typescript
-// 저장 (Create/Update)
-export function saveDailyCheck(userId: string, check: DailyCheck) {
-  const data = JSON.parse(localStorage.getItem('health-tracker-data'));
-  data.dailyChecks[userId][check.date] = check;
-  localStorage.setItem('health-tracker-data', JSON.stringify(data));
-}
-
-// 조회 (Read)
-export function getDailyCheck(userId: string, date: string) {
-  const data = JSON.parse(localStorage.getItem('health-tracker-data'));
-  return data.dailyChecks[userId]?.[date] || null;
-}
-
-// 삭제 (Delete)
-export function deleteDailyCheck(userId: string, date: string) {
-  const data = JSON.parse(localStorage.getItem('health-tracker-data'));
-  delete data.dailyChecks[userId][date];
-  localStorage.setItem('health-tracker-data', JSON.stringify(data));
-}
-```
-
-#### **주의사항**
-⚠️ **Local Storage의 한계:**
-- 용량: 5-10MB (브라우저마다 다름)
-- 보안: 암호화되지 않음 (민감 정보 주의)
-- 동기화: 다른 기기와 공유 불가
-- 삭제: 브라우저 캐시 지우면 모두 삭제
-
-**실전 팁:**
-```typescript
-// 항상 try-catch로 감싸기
-try {
-  localStorage.setItem('key', value);
-} catch (error) {
-  console.error('Storage full or disabled');
-}
-```
-
----
-
-### 6️⃣ 날짜 계산 로직
-
-#### **12주(84일) 생성**
-```typescript
-export function get12WeekDates(startDate: string): string[] {
-  const dates = [];
-  for (let i = 0; i < 84; i++) {
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + i);
-    dates.push(formatDate(date));
-  }
-  return dates;
-}
-
-// 사용 예시
-const dates = get12WeekDates('2025-01-01');
-// ['2025-01-01', '2025-01-02', ..., '2025-03-25']
-```
-
-#### **주차 계산**
-```typescript
-export function getWeekNumber(startDate: string, targetDate: string) {
-  const days = daysBetween(startDate, targetDate);
-  return Math.floor(days / 7) + 1; // 1주차부터 시작
-}
-
-// 예시
-getWeekNumber('2025-01-01', '2025-01-08'); // 2주차
-```
-
----
-
-### 7️⃣ GitHub Actions CI/CD
-
-#### **워크플로우 구조**
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy to GitHub Pages
-
-on:
-  push:
-    branches: ["main"]  # main 브랜치에 푸시할 때
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-      - name: Setup Node.js
-      - name: Install dependencies
-      - name: Build
-      - name: Upload artifact
+function calculateCompletionRate(check: DailyCheck): number {
+  let completed = 0;
+  const total = 10;  // 필수 항목 10개
   
-  deploy:
-    needs: build  # build 완료 후 실행
-    steps:
-      - name: Deploy to GitHub Pages
+  // 식사 (3점)
+  if (check.breakfastCompleted) completed++;
+  if (check.lunchCompleted) completed++;
+  if (check.dinnerCompleted) completed++;
+  
+  // 물 섭취 (1점)
+  if (check.waterIntake >= 8) completed++;
+  
+  // 운동 (1점)
+  if (check.exerciseCompleted) completed++;
+  
+  // 수면 (1점)
+  if (check.sleepHours) completed++;
+  
+  // 신체 측정 (2점)
+  if (check.weight) completed++;
+  if (check.waistCircumference) completed++;
+  
+  // 컨디션 (1점)
+  if (check.condition) completed++;
+  
+  // 메모는 보너스 (선택)
+  if (check.memo) completed++;
+  
+  return Math.round((completed / total) * 100);
+}
 ```
 
-#### **자동 배포 흐름**
-```
-1. git push origin main
-   ↓
-2. GitHub Actions 자동 실행
-   ↓
-3. npm install
-   ↓
-4. npm run build (out/ 폴더 생성)
-   ↓
-5. out/ 폴더를 gh-pages 브랜치에 배포
-   ↓
-6. GitHub Pages가 자동으로 서빙
-   ↓
-7. https://kdkim2000.github.io/12week-health-tracker/ 업데이트!
-```
+**학습 포인트:**
+- 비즈니스 로직 구현
+- 점수 시스템 설계
+- 퍼센트 계산
 
-#### **basePath 설정의 중요성**
+#### 5️⃣ **2단계 회원가입 프로세스**
+
 ```typescript
-// next.config.ts
-const nextConfig = {
-  basePath: process.env.NODE_ENV === 'production' 
-    ? '/12week-health-tracker'  // GitHub Pages URL
-    : '',                         // 로컬에서는 비활성화
+const [activeStep, setActiveStep] = useState(0);
+const steps = ['계정 정보', '신체 정보 & 목표'];
+
+// Step 1 → Step 2 전환 로직
+const handleNextStep = () => {
+  // 입력값 검증
+  if (!email || !password || !confirmPassword) {
+    setError('모든 항목을 입력해주세요');
+    return;
+  }
+  
+  if (password !== confirmPassword) {
+    setError('비밀번호가 일치하지 않습니다');
+    return;
+  }
+  
+  setError('');
+  setActiveStep(1);  // 다음 단계로
 };
 ```
 
-**왜 필요한가요?**
-```
-GitHub Pages URL: https://사용자명.github.io/저장소명/
-                                                 ↑
-                                    이 부분을 basePath로 설정
-```
-
-**없으면 어떻게 되나요?**
-```
-❌ CSS 경로: /12week-health-tracker/_next/static/css/...
-✅ 실제 경로: /_next/static/css/...
-→ 404 에러! 흰 화면만 보임
-```
+**학습 포인트:**
+- Stepper 컴포넌트 활용
+- 다단계 폼 관리
+- 단계별 유효성 검사
 
 ---
 
@@ -556,24 +479,15 @@ GitHub Pages URL: https://사용자명.github.io/저장소명/
 
 ### 사전 요구사항
 
-다음 프로그램들이 설치되어 있어야 합니다:
-
 ```bash
-# Node.js 버전 확인
+# Node.js 버전 확인 (18.17.0 이상)
 node --version
-# v18.17.0 이상 필요
 
-# npm 버전 확인
+# npm 버전 확인 (9.0.0 이상)
 npm --version
-# 9.0.0 이상 권장
 ```
 
-Node.js가 없다면?  
-👉 [Node.js 공식 사이트](https://nodejs.org/)에서 LTS 버전 다운로드
-
----
-
-### 로컬 개발 환경 설정
+### 설치 방법
 
 #### 1️⃣ 저장소 클론
 ```bash
@@ -586,23 +500,20 @@ cd 12week-health-tracker
 npm install
 ```
 
-**이 과정에서 일어나는 일:**
-- `package.json`의 모든 라이브러리 다운로드
-- `node_modules/` 폴더 생성 (수백 MB)
-- 약 1-2분 소요
+**v2.0 추가 패키지 확인:**
+```bash
+# package.json에 다음 항목이 있는지 확인
+"recharts": "^2.12.7"
+```
+
+만약 없다면:
+```bash
+npm install recharts
+```
 
 #### 3️⃣ 개발 서버 실행
 ```bash
 npm run dev
-```
-
-**출력 결과:**
-```
-▲ Next.js 15.5.4
-- Local:   http://localhost:3000
-- Network: http://192.168.0.10:3000
-
-✓ Ready in 3.2s
 ```
 
 #### 4️⃣ 브라우저에서 확인
@@ -610,824 +521,689 @@ npm run dev
 http://localhost:3000
 ```
 
-**축하합니다! 🎉 로컬에서 실행 중입니다!**
-
----
-
-### 개발 중 유용한 명령어
-
-```bash
-# 개발 서버 실행 (Hot Reload 지원)
-npm run dev
-
-# 프로덕션 빌드 (배포 전 테스트)
-npm run build
-
-# 빌드된 파일 실행
-npm run start
-
-# ESLint로 코드 검사
-npm run lint
-
-# TypeScript 타입 체크
-npx tsc --noEmit
-```
-
 ---
 
 ## 📁 프로젝트 구조
 
+### v2.0 변경사항
+
 ```
-12week-health-tracker/
-├── 📂 .github/
-│   └── workflows/
-│       └── deploy.yml              # GitHub Actions 배포 설정
+12week-health-tracker-v2/
+├── app/
+│   ├── layout.tsx              (기존 유지)
+│   ├── page.tsx                ⚠️ 대폭 수정
+│   ├── theme.ts                (기존 유지)
+│   ├── login/page.tsx          (기존 유지)
+│   ├── signup/page.tsx         ⚠️ 수정 (2단계 프로세스)
+│   └── program/              
+│       └── page.tsx            🆕 신규 (프로그램 가이드)
 │
-├── 📂 app/                          # Next.js App Router
-│   ├── layout.tsx                  # 루트 레이아웃 (전체 페이지 공통)
-│   ├── page.tsx                    # 메인 대시보드 (/)
-│   ├── theme.ts                    # MUI 테마 설정
-│   ├── login/
-│   │   └── page.tsx                # 로그인 페이지 (/login)
-│   └── signup/
-│       └── page.tsx                # 회원가입 페이지 (/signup)
+├── components/
+│   ├── Calendar.tsx            ⚠️ 대폭 수정
+│   ├── DailyCheckForm.tsx      ⚠️ 대폭 수정 (12개 항목)
+│   ├── ProgressBar.tsx         (기존 유지)
+│   ├── WeeklyStats.tsx         ⚠️ 수정 (새로운 통계)
+│   ├── PhaseIndicator.tsx      🆕 신규
+│   └── HealthMetrics.tsx       🆕 신규 (차트)
 │
-├── 📂 components/                   # 재사용 가능한 컴포넌트
-│   ├── Calendar.tsx                # 12주 달력 (핵심 컴포넌트!)
-│   ├── DailyCheckForm.tsx          # 일일 체크 입력 폼
-│   ├── ProgressBar.tsx             # 전체 진행률 표시
-│   └── WeeklyStats.tsx             # 주차별 통계 카드
+├── lib/
+│   ├── auth.ts                 ⚠️ 수정 (신체 정보 추가)
+│   ├── dateUtils.ts            (기존 유지)
+│   ├── localStorage.ts         ⚠️ 수정 (확장된 데이터)
+│   └── programData.ts          🆕 신규 (프로그램 데이터)
 │
-├── 📂 lib/                          # 유틸리티 함수
-│   ├── auth.ts                     # 로그인/회원가입 로직
-│   ├── dateUtils.ts                # 날짜 계산 함수
-│   └── localStorage.ts             # 로컬 스토리지 CRUD
+├── types/
+│   └── index.ts                ⚠️ 대폭 수정
 │
-├── 📂 types/                        # TypeScript 타입 정의
-│   └── index.ts                    # 공통 인터페이스
-│
-├── 📄 next.config.ts               # Next.js 설정 (중요!)
-├── 📄 tsconfig.json                # TypeScript 설정
-├── 📄 package.json                 # 프로젝트 메타데이터
-├── 📄 .eslintrc.json               # ESLint 규칙
-└── 📄 README.md                    # 이 문서
+├── next.config.ts              (기존 유지)
+├── package.json                ⚠️ 수정 (recharts 추가)
+├── tsconfig.json               (기존 유지)
+└── README.md                   ⚠️ 이 파일 (전면 개편)
 ```
 
-### 각 폴더의 역할
+### 🆕 신규 파일 설명
 
-#### **app/** - 페이지와 라우팅
-- ✅ 파일명이 곧 URL 경로
-- ✅ `layout.tsx`: 모든 페이지의 공통 부분
-- ✅ `page.tsx`: 실제 페이지 콘텐츠
-
-#### **components/** - 재사용 컴포넌트
-- ✅ 여러 페이지에서 사용
-- ✅ UI 로직과 상태 관리
-- ✅ 'use client' 선언 필수
-
-#### **lib/** - 비즈니스 로직
-- ✅ 순수 함수 (UI 없음)
-- ✅ 테스트 가능한 유틸리티
-- ✅ 재사용 가능한 로직
-
-#### **types/** - 타입 정의
-- ✅ 인터페이스와 타입 선언
-- ✅ 전역으로 사용
-- ✅ 타입 안정성 보장
-
----
-
-## 🔍 핵심 구현 설명
-
-### 1. 달력 시각화 (Calendar.tsx)
-
-#### **핵심 아이디어**
-84일을 7일씩 묶어 12개의 주로 표시
-
+#### `lib/programData.ts`
 ```typescript
-// 84일을 7일씩 나누기
-const weeks: string[][] = [];
-for (let i = 0; i < dates.length; i += 7) {
-  weeks.push(dates.slice(i, i + 7));
-}
+// 12주 프로그램의 핵심 데이터
+export const PHASE_INFO = {
+  1: {
+    title: 'Phase 1: 기초 다지기',
+    weekRange: '1-4주',
+    focusAreas: ['운동 습관 형성', '칼로리 조절'],
+    exerciseGoal: '주 5-6회, 30-40분',
+    nutritionGoal: '일일 2,000kcal',
+  },
+  // Phase 2, 3 ...
+};
 
-// 결과
-[
-  ['2025-01-01', '2025-01-02', ..., '2025-01-07'],  // 1주차
-  ['2025-01-08', '2025-01-09', ..., '2025-01-14'],  // 2주차
-  ...
-]
-```
-
-#### **색상 결정 로직**
-```typescript
-function getDateStatus(date: string) {
-  if (isFuture(date)) return 'future';      // 회색
-  
-  const check = dailyChecks[date];
-  if (!check) return 'incomplete';          // 빨간색
-  
-  if (check.exerciseCompleted && check.dietCompleted) {
-    return 'completed';                     // 초록색
-  } else if (check.exerciseCompleted || check.dietCompleted) {
-    return 'partial';                       // 노란색
-  }
-  
-  return 'incomplete';                      // 빨간색
+// 주차별 운동/식단 가이드
+export function getWeeklyProgram(weekNumber: number) {
+  return {
+    weekNumber,
+    exerciseSchedule: [...],  // 요일별 운동
+    nutritionGuide: [...],     // 요일별 식단
+    weeklyGoals: [...],        // 주간 목표
+  };
 }
 ```
 
-#### **반응형 그리드**
+**활용 예시:**
 ```typescript
-<Grid container spacing={1}>
-  {week.map(date => (
-    <Grid item xs={12/7}>  {/* 7개가 한 줄 */}
-      <Paper onClick={() => handleClick(date)}>
-        {날짜 표시}
-      </Paper>
-    </Grid>
+// 프로그램 페이지에서 사용
+const program = getWeeklyProgram(selectedWeek);
+
+<Table>
+  {program.exerciseSchedule.map(schedule => (
+    <TableRow>
+      <TableCell>{schedule.day}</TableCell>
+      <TableCell>{schedule.exercise}</TableCell>
+    </TableRow>
   ))}
-</Grid>
+</Table>
+```
+
+#### `components/PhaseIndicator.tsx`
+```typescript
+// 현재 Phase 정보 표시
+<PhaseIndicator 
+  currentWeek={5} 
+  currentPhase={2}
+/>
+
+// 렌더링 결과:
+// ┌─────────────────────────────┐
+// │ 🟠 Phase 2: 강도 증가       │
+// │ [■■■■■■■□□□□□] 1/4주    │
+// │ 집중 영역: HIIT 도입, ...   │
+// │ 운동 목표: 주 6회, 40-50분  │
+// └─────────────────────────────┘
+```
+
+#### `components/HealthMetrics.tsx`
+```typescript
+// 체중/허리둘레 차트
+<HealthMetrics 
+  user={user}
+  chartData={chartData}
+/>
+
+// 기능:
+// - 체중/허리둘레 토글 전환
+// - 목표선 표시
+// - 변화량 계산
+// - 반응형 차트
 ```
 
 ---
 
-### 2. 로컬 스토리지 관리 (localStorage.ts)
+## 🔧 핵심 구현 설명
 
-#### **싱글톤 패턴**
+### 1. 확장된 체크리스트 관리
+
+#### v1.0 vs v2.0 비교
+
+**v1.0 (3개 필드):**
 ```typescript
-const STORAGE_KEY = 'health-tracker-data';
-
-// 데이터 가져오기
-function getData() {
-  const json = localStorage.getItem(STORAGE_KEY);
-  return json ? JSON.parse(json) : initialData;
+interface DailyCheck {
+  date: string;
+  exerciseCompleted: boolean;
+  dietCompleted: boolean;
+  weight: number | null;
 }
 
-// 데이터 저장하기
-function setData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
+// 저장
+<Checkbox onChange={(e) => 
+  saveDailyCheck(userId, {
+    date,
+    exerciseCompleted: e.target.checked,
+    dietCompleted,
+    weight,
+  })
+} />
 ```
 
-#### **옵셔널 체이닝 활용**
+**v2.0 (12개 필드):**
 ```typescript
-// ❌ 오류 발생 가능
-const check = data.dailyChecks[userId][date];
-
-// ✅ 안전한 접근
-const check = data.dailyChecks[userId]?.[date] || null;
-//                                      ↑ 옵셔널 체이닝
-```
-
----
-
-### 3. 날짜 계산 (dateUtils.ts)
-
-#### **날짜 포맷팅**
-```typescript
-function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-// 예시
-formatDate(new Date('2025-01-05'));  // '2025-01-05'
-```
-
-#### **날짜 더하기**
-```typescript
-function addDays(startDate: string, days: number): string {
-  const date = new Date(startDate);
-  date.setDate(date.getDate() + days);
-  return formatDate(date);
+interface DailyCheck {
+  // 식사 (6개 필드)
+  breakfastCompleted: boolean;
+  breakfastTime?: string;
+  lunchCompleted: boolean;
+  lunchTime?: string;
+  dinnerCompleted: boolean;
+  dinnerTime?: string;
+  
+  // 기타 (6개 필드)
+  waterIntake: number;
+  exerciseCompleted: boolean;
+  exerciseType?: string;
+  exerciseDuration?: number;
+  sleepHours?: number;
+  weight?: number;
+  waistCircumference?: number;
+  condition?: number;
+  memo?: string;
 }
 
-// 예시
-addDays('2025-01-01', 7);  // '2025-01-08'
+// 저장 (12개 항목 통합)
+const handleSave = () => {
+  const checkData: DailyCheck = {
+    date,
+    breakfastCompleted,
+    breakfastTime: breakfastCompleted ? breakfastTime : undefined,
+    lunchCompleted,
+    lunchTime: lunchCompleted ? lunchTime : undefined,
+    dinnerCompleted,
+    dinnerTime: dinnerCompleted ? dinnerTime : undefined,
+    waterIntake,
+    exerciseCompleted,
+    exerciseType: exerciseCompleted ? exerciseType : undefined,
+    exerciseDuration: exerciseCompleted && exerciseDuration 
+      ? parseFloat(exerciseDuration) 
+      : undefined,
+    sleepHours: sleepHours ? parseFloat(sleepHours) : undefined,
+    weight: weight ? parseFloat(weight) : undefined,
+    waistCircumference: waistCircumference 
+      ? parseFloat(waistCircumference) 
+      : undefined,
+    condition,
+    memo: memo.trim() || undefined,
+  };
+  
+  onSave(checkData);
+};
 ```
 
----
+**배울 점:**
+- 선택적 필드 처리 (`?:`)
+- 조건부 데이터 포함
+- 타입 변환 (`parseFloat`)
+- 빈 값 필터링 (`trim()`)
 
-### 4. 상태 관리 패턴
+### 2. Phase 시스템 구현
 
-#### **State Lifting (상태 끌어올리기)**
 ```typescript
-// ❌ 각 컴포넌트가 따로 관리 (비효율)
-<Calendar data={data1} />
-<Stats data={data2} />  // 동기화 문제!
+// Phase 계산 로직
+export function getPhaseFromWeek(weekNumber: number): Phase {
+  if (weekNumber <= 4) return 1;
+  if (weekNumber <= 8) return 2;
+  return 3;
+}
 
-// ✅ 부모가 통합 관리
-function Dashboard() {
-  const [dailyChecks, setDailyChecks] = useState({});
+// Phase별 색상
+export const PHASE_COLORS: Record<Phase, string> = {
+  1: '#4CAF50',  // 초록 (기초)
+  2: '#FF9800',  // 주황 (강도 증가)
+  3: '#2196F3',  // 파랑 (목표 달성)
+};
+
+// 달력에서 활용
+weeks.map((week, weekIndex) => {
+  const weekNumber = weekIndex + 1;
+  const phase = getPhaseFromWeek(weekNumber);
+  const phaseColor = PHASE_COLORS[phase];
   
   return (
-    <>
-      <Calendar 
-        dailyChecks={dailyChecks}
-        onSave={(check) => {
-          saveDailyCheck(userId, check);
-          setDailyChecks({...dailyChecks}); // 리렌더링
-        }}
-      />
-      <Stats dailyChecks={dailyChecks} />
-    </>
+    <Box sx={{ borderColor: phaseColor }}>
+      {/* 주차 표시 */}
+    </Box>
   );
+});
+```
+
+**설계 원칙:**
+- 단순하고 명확한 계산 로직
+- 중앙집중식 색상 관리
+- 타입 안정성 (`Record<Phase, string>`)
+
+### 3. 차트 데이터 준비
+
+```typescript
+// 1단계: 측정값이 있는 날짜 필터링
+const dates = get12WeekDates(user.startDate);  // 84일
+const dailyChecks = getAllDailyChecks(user.id);
+
+// 2단계: 차트용 데이터로 변환
+const chartData: ChartDataPoint[] = dates
+  .filter(date => {
+    const check = dailyChecks[date];
+    return check && (check.weight || check.waistCircumference);
+  })
+  .map(date => {
+    const check = dailyChecks[date];
+    const [, month, day] = date.split('-');
+    
+    return {
+      date: `${parseInt(month)}/${parseInt(day)}`,  // "1/1" 형식
+      weight: check.weight,
+      waist: check.waistCircumference,
+      targetWeight: user.targetWeight,
+      targetWaist: user.targetWaist,
+    };
+  });
+
+// 3단계: Recharts에 전달
+<LineChart data={chartData}>
+  <Line dataKey="weight" stroke="#2196F3" />
+  <ReferenceLine y={user.targetWeight} stroke="#FF9800" />
+</LineChart>
+```
+
+**최적화 포인트:**
+- 빈 데이터 제거 (차트 성능 향상)
+- 날짜 포맷 간소화 (가독성)
+- 목표선 자동 표시
+
+### 4. 주차별 통계 계산
+
+```typescript
+// v2.0 확장된 통계
+for (let week = 1; week <= 12; week++) {
+  const weekDates = getWeekDates(user.startDate, week);
+  
+  let totalMeals = 0;
+  let completedMeals = 0;
+  let totalWater = 0;
+  let exerciseDays = 0;
+  let totalExerciseMinutes = 0;
+  let weightMeasurements: number[] = [];
+  let waistMeasurements: number[] = [];
+  
+  weekDates.forEach(date => {
+    const check = dailyChecks[date];
+    if (!check) return;
+    
+    // 식사 통계
+    totalMeals += 3;
+    if (check.breakfastCompleted) completedMeals++;
+    if (check.lunchCompleted) completedMeals++;
+    if (check.dinnerCompleted) completedMeals++;
+    
+    // 물 섭취
+    totalWater += check.waterIntake;
+    
+    // 운동
+    if (check.exerciseCompleted) {
+      exerciseDays++;
+      totalExerciseMinutes += check.exerciseDuration || 0;
+    }
+    
+    // 신체 측정
+    if (check.weight) weightMeasurements.push(check.weight);
+    if (check.waistCircumference) 
+      waistMeasurements.push(check.waistCircumference);
+  });
+  
+  // 평균 계산
+  const averageWeight = weightMeasurements.length > 0
+    ? weightMeasurements.reduce((a, b) => a + b) / weightMeasurements.length
+    : undefined;
+  
+  weeklyStats.push({
+    weekNumber: week,
+    mealCompletionRate: (completedMeals / totalMeals) * 100,
+    waterAverageIntake: totalWater / 7,
+    exerciseDays,
+    totalExerciseMinutes,
+    averageWeight,
+    // ...
+  });
 }
 ```
 
-#### **불변성 유지**
-```typescript
-// ❌ 직접 수정 (React가 변화 감지 못함)
-dailyChecks[date] = newCheck;
-setDailyChecks(dailyChecks);
+**배울 점:**
+- 복잡한 집계 로직
+- 조건부 배열 추가
+- 평균/합계 계산
+- null 안전 처리
 
-// ✅ 새 객체 생성 (React가 변화 감지)
-setDailyChecks({
-  ...dailyChecks,
-  [date]: newCheck
+---
+
+## 🔄 v1.0에서 v2.0으로 업그레이드
+
+### 마이그레이션 가이드
+
+#### ⚠️ 주의사항
+
+**로컬스토리지 키 변경:**
+```
+v1.0: 'health-tracker-data'
+v2.0: 'health-tracker-v2-data'
+```
+
+**결과:** 기존 v1.0 데이터는 v2.0에서 보이지 않습니다.
+
+#### 옵션 1: 새로 시작 (권장)
+
+```bash
+# v2.0 코드 받기
+git pull origin main
+
+# 의존성 업데이트
+npm install
+
+# 개발 서버 실행
+npm run dev
+
+# 브라우저에서 새로 회원가입
+```
+
+#### 옵션 2: 데이터 마이그레이션 (고급)
+
+```typescript
+// 브라우저 콘솔에서 실행
+function migrateV1ToV2() {
+  // v1.0 데이터 읽기
+  const v1Data = JSON.parse(
+    localStorage.getItem('health-tracker-data') || '{}'
+  );
+  
+  // v2.0 형식으로 변환
+  const v2Data = {
+    currentUser: v1Data.currentUser,
+    users: {},
+    dailyChecks: {},
+  };
+  
+  // 사용자 데이터 변환
+  Object.entries(v1Data.users).forEach(([userId, user]) => {
+    v2Data.users[userId] = {
+      ...user,
+      // v2.0 필수 필드 추가 (임의값)
+      initialWeight: 80,
+      targetWeight: 75,
+      initialWaist: 85,
+      targetWaist: 80,
+    };
+  });
+  
+  // 체크리스트 변환
+  Object.entries(v1Data.dailyChecks).forEach(([userId, checks]) => {
+    v2Data.dailyChecks[userId] = {};
+    
+    Object.entries(checks).forEach(([date, check]) => {
+      v2Data.dailyChecks[userId][date] = {
+        date,
+        // v1.0 필드 매핑
+        breakfastCompleted: check.dietCompleted,
+        lunchCompleted: check.dietCompleted,
+        dinnerCompleted: check.dietCompleted,
+        waterIntake: 6,  // 기본값
+        exerciseCompleted: check.exerciseCompleted,
+        weight: check.weight,
+        condition: 5,    // 기본값
+      };
+    });
+  });
+  
+  // v2.0 저장
+  localStorage.setItem('health-tracker-v2-data', JSON.stringify(v2Data));
+  
+  alert('마이그레이션 완료! 페이지를 새로고침하세요.');
+}
+
+migrateV1ToV2();
+```
+
+### 코드 업그레이드 체크리스트
+
+- [ ] `package.json`에 recharts 추가
+- [ ] `types/index.ts` 타입 업데이트
+- [ ] `lib/localStorage.ts` 키 변경
+- [ ] `lib/programData.ts` 신규 파일 생성
+- [ ] 모든 컴포넌트 업데이트
+- [ ] `npm install` 실행
+- [ ] 빌드 테스트 (`npm run build`)
+
+---
+
+## 🎨 커스터마이징 가이드
+
+### 1. Phase 색상 변경
+
+```typescript
+// lib/programData.ts
+export const PHASE_COLORS = {
+  1: '#FF6B6B',  // 빨강 (정열)
+  2: '#4ECDC4',  // 청록 (균형)
+  3: '#45B7D1',  // 하늘 (달성)
+};
+```
+
+### 2. 프로그램 데이터 수정
+
+```typescript
+// lib/programData.ts
+
+// 운동 스케줄 변경
+const WEEK1_EXERCISE = [
+  {
+    day: '월요일',
+    exercise: '나만의 운동', // 여기 수정!
+    description: '상세 설명',
+  },
+  // ...
+];
+
+// 식단 가이드 변경
+const WEEK1_NUTRITION = [
+  {
+    day: '월요일',
+    meals: {
+      breakfast: '나만의 아침 메뉴',
+      lunch: '나만의 점심 메뉴',
+      dinner: '나만의 저녁 메뉴',
+    },
+  },
+  // ...
+];
+```
+
+### 3. 목표 기간 변경 (12주 → N주)
+
+```typescript
+// dateUtils.ts
+export function get12WeekDates(startDate: string): string[] {
+  const dates: string[] = [];
+  const TOTAL_WEEKS = 16;  // 12 → 16주로 변경
+  const TOTAL_DAYS = TOTAL_WEEKS * 7;
+  
+  for (let i = 0; i < TOTAL_DAYS; i++) {
+    dates.push(addDays(startDate, i));
+  }
+  return dates;
+}
+
+// programData.ts
+export function getPhaseFromWeek(weekNumber: number): Phase {
+  if (weekNumber <= 5) return 1;   // 1-5주
+  if (weekNumber <= 11) return 2;  // 6-11주
+  return 3;                         // 12-16주
+}
+```
+
+---
+
+## 📊 성능 최적화
+
+### v2.0 최적화 전략
+
+#### 1. 메모이제이션
+
+```typescript
+// 비용이 큰 계산은 useMemo로
+const chartData = useMemo(() => {
+  return dates
+    .filter(date => dailyChecks[date]?.weight)
+    .map(date => ({
+      date: formatDate(date),
+      weight: dailyChecks[date].weight,
+    }));
+}, [dates, dailyChecks]);  // 의존성 배열
+```
+
+#### 2. 조건부 렌더링
+
+```typescript
+// 데이터 없으면 차트 렌더링 안 함
+{chartData.length > 0 ? (
+  <LineChart data={chartData}>...</LineChart>
+) : (
+  <Box>아직 측정 데이터가 없습니다</Box>
+)}
+```
+
+#### 3. 지연 로딩
+
+```typescript
+// 프로그램 페이지는 필요할 때만 로드
+const ProgramPage = dynamic(() => import('./program/page'), {
+  loading: () => <CircularProgress />,
 });
 ```
 
 ---
 
-## 🚀 GitHub Pages 배포
+## 🔍 트러블슈팅
 
-### 1단계: 저장소 설정
+### v2.0 특정 문제
 
-#### GitHub에서 새 저장소 생성
-```
-Repository name: 12week-health-tracker
-Description: 12주 건강관리 체크리스트
-Public ✓
-```
+#### Q1. recharts 차트가 안 보여요!
 
-#### 로컬 코드 푸시
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/사용자명/12week-health-tracker.git
-git push -u origin main
-```
-
----
-
-### 2단계: GitHub Actions 설정
-
-#### 워크플로우 파일 확인
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy to GitHub Pages
-
-on:
-  push:
-    branches: ["main"]
-```
-
-이 파일이 있으면 **자동 배포** 설정 완료!
-
----
-
-### 3단계: GitHub Pages 활성화
-
-1. **Settings** 탭 클릭
-2. 좌측 메뉴에서 **Pages** 클릭
-3. **Source** 선택
-   ```
-   Source: GitHub Actions
-   ```
-4. 저장
-
----
-
-### 4단계: 배포 확인
-
-#### GitHub Actions 탭에서 확인
-```
-Actions → Deploy to GitHub Pages
-
-✓ build (1m 23s)
-✓ deploy (34s)
-```
-
-#### 배포 완료!
-```
-🌐 Your site is live at:
-https://kdkim2000.github.io/12week-health-tracker/
-```
-
----
-
-### 배포 과정 상세 설명
-
-```mermaid
-graph LR
-    A[git push] --> B[GitHub Actions 트리거]
-    B --> C[Node.js 환경 구성]
-    C --> D[npm install]
-    D --> E[npm run build]
-    E --> F[out/ 폴더 생성]
-    F --> G[.nojekyll 추가]
-    G --> H[gh-pages 브랜치 배포]
-    H --> I[GitHub Pages 서빙]
-    I --> J[사이트 접속 가능!]
-```
-
-#### 각 단계 설명
-
-**1. git push** (1초)
-```bash
-git push origin main
-# → GitHub 서버로 코드 전송
-```
-
-**2. GitHub Actions 트리거** (5초)
-```yaml
-on:
-  push:
-    branches: ["main"]
-# → main 브랜치 푸시 감지
-```
-
-**3-4. 환경 구성 + 의존성 설치** (30초)
-```bash
-npm install
-# → node_modules/ 생성
-```
-
-**5. 빌드** (1분)
-```bash
-npm run build
-# → Next.js가 정적 HTML 생성
-# → out/ 폴더에 저장
-```
-
-**6. .nojekyll 추가** (1초)
-```bash
-touch out/.nojekyll
-# → Jekyll 비활성화 (중요!)
-```
-
-**7-8. 배포** (20초)
-```bash
-# gh-pages 브랜치에 out/ 푸시
-# → GitHub Pages가 자동 감지
-```
-
-**9. 사이트 접속 가능** (1분 대기)
-```
-https://kdkim2000.github.io/12week-health-tracker/
-```
-
-#### 전체 소요 시간
-```
-총 약 3-4분
-(코드 푸시 → 사이트 업데이트)
-```
-
----
-
-### 배포 후 확인사항
-
-#### ✅ 체크리스트
-- [ ] 사이트가 로드되는가?
-- [ ] CSS가 정상 적용되었는가?
-- [ ] 로그인이 작동하는가?
-- [ ] 달력이 보이는가?
-- [ ] 날짜 클릭 시 폼이 나타나는가?
-- [ ] 데이터가 저장되는가?
-
-#### 🐛 문제 해결
-
-**흰 화면만 보인다면?**
-```bash
-# .nojekyll 파일 확인
-ls out/.nojekyll
-
-# 없으면 deploy.yml에 추가
-- name: Create .nojekyll
-  run: touch ./out/.nojekyll
-```
-
-**404 에러가 난다면?**
-```typescript
-// next.config.ts 확인
-basePath: '/12week-health-tracker',  // 저장소명 확인
-```
-
-**CSS가 안 보인다면?**
-```typescript
-// assetPrefix도 설정했는지 확인
-assetPrefix: '/12week-health-tracker',
-```
-
----
-
-## 🛠️ 트러블슈팅
-
-### 자주 묻는 질문 (FAQ)
-
-#### Q1. 로그인 후 데이터가 사라졌어요!
-**A:** 브라우저 캐시를 지웠거나, 시크릿 모드를 사용 중일 수 있습니다.
+**원인:** recharts 설치 안 됨
 
 **해결:**
-- 일반 모드 사용
-- 같은 브라우저 사용
-- F12 → Application → Local Storage 확인
-
----
-
-#### Q2. 다른 기기에서도 데이터를 보고 싶어요!
-**A:** 현재 버전은 로컬 스토리지만 사용하여 불가능합니다.
-
-**해결 방법 (향후 개선):**
-1. 백엔드 API 구축 (Node.js + Express)
-2. 데이터베이스 연동 (MongoDB, PostgreSQL)
-3. 클라우드 스토리지 (Firebase, Supabase)
-
----
-
-#### Q3. npm install이 오래 걸려요!
-**A:** 정상입니다. 수백 개의 패키지를 다운로드하기 때문입니다.
-
-**최적화:**
 ```bash
-# npm 대신 pnpm 사용 (더 빠름)
-npm install -g pnpm
-pnpm install
+npm install recharts
+npm install --save-dev @types/recharts
 ```
 
----
+#### Q2. "viewport" 경고가 떠요!
 
-#### Q4. 빌드 시 TypeScript 오류가 나요!
-**A:** 타입 오류를 수정하거나, 임시로 무시할 수 있습니다.
+**원인:** Next.js 15 메타데이터 API 변경
 
-**임시 무시:**
+**해결:**
 ```typescript
-// next.config.ts
-typescript: {
-  ignoreBuildErrors: true,  // 권장하지 않음!
-}
+// app/layout.tsx
+import type { Metadata, Viewport } from 'next';
+
+// ❌ 잘못된 방법
+export const metadata: Metadata = {
+  viewport: { width: 'device-width' },
+};
+
+// ✅ 올바른 방법
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
 ```
 
-**올바른 해결:**
+#### Q3. Phase 색상이 안 나와요!
+
+**원인:** `lib/programData.ts` 파일 누락
+
+**해결:**
+```bash
+# 파일 존재 확인
+ls lib/programData.ts
+
+# 없으면 다시 생성 (위 코드 참고)
+```
+
+#### Q4. 회원가입 시 오류가 나요!
+
+**원인:** 신체 정보 유효성 검사
+
+**해결:**
 ```typescript
-// 타입 오류 수정
-const user: User = getCurrentUser();
-//         ↑ 타입 명시
+// 입력값 확인
+- 현재 체중 > 목표 체중
+- 현재 허리둘레 > 목표 허리둘레
+- 모든 값 > 0
 ```
 
 ---
 
-#### Q5. GitHub Actions가 실패해요!
-**A:** Actions 탭에서 로그를 확인하세요.
+## 🚀 배포하기
 
-**일반적인 원인:**
-```yaml
-# 1. Node 버전 불일치
-- uses: actions/setup-node@v4
-  with:
-    node-version: "20"  # 18 이상 필요
+### GitHub Pages 배포 (변경 없음)
 
-# 2. 빌드 오류
-Run npm run build  # ← 이 단계에서 실패
+v1.0과 동일한 방법으로 배포됩니다:
 
-# 3. 권한 문제
-permissions:
-  contents: read
-  pages: write      # 필수
-  id-token: write   # 필수
-```
-
----
-
-### 개발 환경 문제
-
-#### "Module not found" 오류
-```bash
-# node_modules 삭제 후 재설치
-rm -rf node_modules package-lock.json
-npm install
-```
-
-#### 포트 3000이 이미 사용 중
-```bash
-# 다른 포트 사용
-npm run dev -- -p 3001
-
-# 또는 기존 프로세스 종료
-lsof -ti:3000 | xargs kill -9  # Mac/Linux
-netstat -ano | findstr :3000   # Windows
-```
-
-#### Hot Reload가 작동 안 함
-```bash
-# 개발 서버 재시작
-Ctrl + C
-npm run dev
-```
-
----
-
-## 💡 향후 개선 방향
-
-### v2.0.0 계획
-
-#### 1. 백엔드 연동
-```
-현재: 로컬 스토리지 (브라우저에만 저장)
-향후: REST API + 데이터베이스
-
-기술 스택:
-- Backend: Node.js + Express 또는 Next.js API Routes
-- Database: PostgreSQL 또는 MongoDB
-- Auth: JWT + bcrypt
-```
-
-#### 2. 소셜 로그인
-```
-- Google OAuth
-- Kakao Login
-- Naver Login
-```
-
-#### 3. PWA (Progressive Web App)
-```
-기능:
-- 오프라인 지원
-- 홈 화면에 설치
-- 푸시 알림
-
-설정:
-next.config.ts + next-pwa 플러그인
-```
-
-#### 4. 데이터 분석
-```
-추가 기능:
-- 체중 변화 그래프 (Chart.js)
-- 월별 달성률 비교
-- 운동 종류별 통계
-- PDF 리포트 내보내기
-```
-
-#### 5. 다크 모드
-```typescript
-const [darkMode, setDarkMode] = useState(false);
-
-const theme = createTheme({
-  palette: {
-    mode: darkMode ? 'dark' : 'light',
-  },
-});
-```
-
-#### 6. 국제화 (i18n)
-```
-지원 언어:
-- 한국어 (ko)
-- 영어 (en)
-- 일본어 (ja)
-
-라이브러리: next-i18next
-```
-
----
-
-### 기여 아이디어
-
-**초보자도 기여할 수 있는 부분:**
-
-#### Easy 난이도
-- [ ] README 오타 수정
-- [ ] 주석 추가/개선
-- [ ] CSS 스타일 개선
-- [ ] 새로운 아이콘 추가
-
-#### Medium 난이도
-- [ ] 목표 체중 설정 기능
-- [ ] 메모 기능 추가
-- [ ] 데이터 내보내기 (JSON)
-- [ ] 프로필 사진 업로드
-
-#### Hard 난이도
-- [ ] 백엔드 API 구현
-- [ ] 소셜 로그인 연동
-- [ ] 실시간 알림 시스템
-- [ ] 모바일 앱 (React Native)
-
----
-
-## 🤝 기여하기
-
-### 기여 가이드
-
-#### 1. Fork & Clone
-```bash
-# 1. GitHub에서 Fork 버튼 클릭
-# 2. 내 저장소로 클론
-git clone https://github.com/내아이디/12week-health-tracker.git
-```
-
-#### 2. 브랜치 생성
-```bash
-git checkout -b feature/my-awesome-feature
-```
-
-#### 3. 코드 작성
-```typescript
-// 주석 꼭 달아주세요!
-/**
- * 목표 체중 설정 기능
- * @param userId 사용자 ID
- * @param targetWeight 목표 체중
- */
-function setTargetWeight(userId: string, targetWeight: number) {
-  // 구현...
-}
-```
-
-#### 4. 커밋
 ```bash
 git add .
-git commit -m "feat: 목표 체중 설정 기능 추가"
+git commit -m "feat: v2.0 upgrade"
+git push origin main
 ```
 
-**커밋 메시지 규칙:**
-```
-feat: 새 기능
-fix: 버그 수정
-docs: 문서 수정
-style: 코드 포맷팅
-refactor: 리팩토링
-test: 테스트 추가
-chore: 빌드/설정 변경
-```
-
-#### 5. Push & PR
-```bash
-git push origin feature/my-awesome-feature
-
-# GitHub에서 Pull Request 생성
-```
+GitHub Actions가 자동으로:
+1. 의존성 설치 (recharts 포함)
+2. 빌드 실행
+3. GitHub Pages 배포
 
 ---
 
-### 코드 리뷰 기준
+## 🎯 향후 개선 방향
 
-✅ **체크리스트:**
-- [ ] TypeScript 타입이 정의되어 있는가?
-- [ ] 주석이 충분한가?
-- [ ] 에러 처리가 되어 있는가?
-- [ ] 기존 기능에 영향이 없는가?
-- [ ] ESLint 경고가 없는가?
+### v3.0 계획
 
----
+#### 1. 백엔드 연동
+- Supabase 또는 Firebase
+- 실시간 동기화
+- 다중 기기 지원
 
-## 📚 추가 학습 자료
+#### 2. AI 코칭
+- OpenAI API 연동
+- 개인 맞춤 조언
+- 자동 식단 생성
 
-### 공식 문서
-- [Next.js 공식 문서](https://nextjs.org/docs) - **필독!**
-- [React 공식 문서](https://react.dev/) - Hook 학습
-- [TypeScript 핸드북](https://www.typescriptlang.org/docs/) - 타입 시스템
-- [Material-UI 문서](https://mui.com/) - 컴포넌트 레퍼런스
+#### 3. 소셜 기능
+- 친구와 진행 상황 공유
+- 그룹 챌린지
+- 리더보드
 
-### 추천 영상 (한국어)
-- 노마드 코더 - Next.js 시작하기
-- 드림코딩 - TypeScript 완전 정복
-- 생활코딩 - React 기초
-
-### 추천 책
-- "리액트를 다루는 기술" - 김민준
-- "타입스크립트 프로그래밍" - Boris Cherny
-- "실전 리액트 프로그래밍" - 이재승
+#### 4. 고급 분석
+- 주간/월간 리포트
+- 예측 분석 (목표 달성일)
+- PDF 다운로드
 
 ---
 
-## 📝 라이선스
+## 📚 학습 자료
 
-이 프로젝트는 **MIT 라이선스** 하에 배포됩니다.
+### v2.0 관련 추천 자료
 
-```
-MIT License
+1. **Recharts 공식 문서**
+   - https://recharts.org/
+   - 예제가 풍부함
 
-Copyright (c) 2025 kdkim2000
+2. **Material-UI Stepper**
+   - https://mui.com/material-ui/react-stepper/
+   - 다단계 폼 구현
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-```
-
-**쉽게 말하면:**
-- ✅ 자유롭게 사용 가능
-- ✅ 수정 가능
-- ✅ 상업적 이용 가능
-- ✅ 재배포 가능
-
----
-
-## 👨‍💻 개발자 정보
-
-### 만든 사람
-- **GitHub**: [@kdkim2000](https://github.com/kdkim2000)
-- **프로젝트**: [12week-health-tracker](https://github.com/kdkim2000/12week-health-tracker)
-- **라이브**: [https://kdkim2000.github.io/12week-health-tracker/](https://kdkim2000.github.io/12week-health-tracker/)
+3. **TypeScript Handbook**
+   - https://www.typescriptlang.org/docs/
+   - 고급 타입 활용
 
 ---
 
 ## 🙏 감사합니다
 
-이 프로젝트를 통해 Next.js를 학습하시는 모든 분들께 도움이 되길 바랍니다.
+v2.0은 실제 건강검진 결과를 바탕으로 과학적인 프로그램을 구현했습니다.
 
-### 피드백 환영합니다!
-- 🐛 버그 발견: [Issues](https://github.com/kdkim2000/12week-health-tracker/issues)
+**기여하신 분들:**
+- [@kdkim2000](https://github.com/kdkim2000) - 메인 개발자
+- Claude (Anthropic) - 프로그램 설계 지원
+
+**피드백 환영!**
+- 🐛 버그 제보: [Issues](https://github.com/kdkim2000/12week-health-tracker/issues)
 - 💡 기능 제안: [Discussions](https://github.com/kdkim2000/12week-health-tracker/discussions)
-- ⭐ 도움이 되었다면 Star를 눌러주세요!
 
 ---
 
-## 📊 프로젝트 통계
-
-```
-코드 줄 수: ~3,000줄
-컴포넌트: 7개
-페이지: 3개
-유틸리티 함수: 15개
-개발 기간: 2주
-사용 기술: 7개
-```
-
----
-
-## 🎯 학습 체크리스트
-
-이 프로젝트를 완전히 이해했다면:
-
-- [ ] Next.js App Router의 파일 구조를 설명할 수 있다
-- [ ] Server/Client Component의 차이를 안다
-- [ ] TypeScript로 타입을 정의할 수 있다
-- [ ] Material-UI 컴포넌트를 사용할 수 있다
-- [ ] Local Storage CRUD를 구현할 수 있다
-- [ ] GitHub Actions로 자동 배포를 설정할 수 있다
-- [ ] 날짜 계산 로직을 이해했다
-- [ ] React Hooks(useState, useEffect)를 활용할 수 있다
-
-**모두 체크했다면 축하합니다! 🎉**  
-당신은 이제 Next.js 중급 개발자입니다!
-
----
-
-## 🚀 다음 단계
-
-### 추천 학습 경로
-
-1. **이 프로젝트 완전히 이해하기** (1-2주)
-   - 모든 코드 읽기
-   - 직접 수정해보기
-   - 새 기능 추가해보기
-
-2. **백엔드 연동 학습** (2-3주)
-   - Node.js + Express 기초
-   - REST API 설계
-   - 데이터베이스 연동
-
-3. **실무 프로젝트 만들기** (1-2개월)
-   - 포트폴리오용 프로젝트
-   - 팀 프로젝트 참여
-   - 오픈소스 기여
-
-4. **취업 준비** (진행 중)
-   - 기술 블로그 작성
-   - GitHub 활동
-   - 코딩 테스트 준비
-
----
-
-**마지막으로,**
-
-> 코딩은 암기가 아닙니다.  
-> 이해하고, 실습하고, 반복하는 것입니다.  
-> 
-> 막히면 멈추지 말고 질문하세요.  
-> 완벽하지 않아도 됩니다.  
-> 
-> **지금 시작하세요! 💪**
-
----
-
-**Made with ❤️ by kdkim2000**  
+**Made with ❤️ and 🏃‍♂️**  
 **Last Updated: 2025-01-XX**
 
-⭐ **이 프로젝트가 도움이 되었다면 Star를 눌러주세요!** ⭐
-
-
+⭐ **v2.0이 도움이 되셨다면 Star를 눌러주세요!** ⭐
