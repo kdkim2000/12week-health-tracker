@@ -1,8 +1,8 @@
 // 파일 경로: types/index.ts
-// 설명: v2.0 새로운 타입 정의 - 12개 체크 항목 포함
+// 설명: v3.0 Firebase 통합 타입 정의 - 12개 체크 항목 포함
 
 /**
- * 사용자 정보 타입 (v2.0 확장)
+ * 사용자 정보 타입 (v3.0 Firebase 통합)
  */
 export interface User {
   id: string;
@@ -19,12 +19,34 @@ export interface User {
 }
 
 /**
+ * Firebase 사용자 프로필 타입 (v3.0)
+ */
+export interface UserProfile {
+  uid: string;                    // Firebase UID
+  email: string;
+  displayName?: string;           // 표시 이름
+  photoURL?: string;              // 프로필 이미지
+  startDate: string;              // 프로그램 시작일
+  createdAt: string;
+  lastLoginAt?: string;           // 마지막 로그인
+  
+  // 신체 정보
+  initialWeight: number;          // 초기 체중
+  targetWeight: number;           // 목표 체중
+  initialWaist: number;           // 초기 허리둘레
+  targetWaist: number;            // 목표 허리둘레
+  height?: number;                // 키 (cm)
+  age?: number;                   // 나이
+  gender?: 'male' | 'female';     // 성별
+}
+
+/**
  * Phase 타입 (1-4주 / 5-8주 / 9-12주)
  */
 export type Phase = 1 | 2 | 3;
 
 /**
- * 일일 체크리스트 v2.0 (12개 항목)
+ * 일일 체크리스트 v3.0 (12개 항목)
  */
 export interface DailyCheck {
   date: string;                   // YYYY-MM-DD
@@ -50,15 +72,20 @@ export interface DailyCheck {
   
   // 신체 측정
   weight?: number;                // 체중 (kg)
-  waistCircumference?: number;    // 허리둘레 (cm)
+  waist?: number;                 // 허리둘레 (cm) - 속성명 통일
+  waistCircumference?: number;    // 허리둘레 (cm) - 이전 버전 호환용
   
   // 컨디션
   condition?: number;             // 컨디션 (1-10)
   memo?: string;                  // 메모
+  
+  // 🆕 v3.0 Firebase 메타데이터
+  createdAt?: string;             // 생성 시간
+  updatedAt?: string;             // 수정 시간
 }
 
 /**
- * 주간 통계 v2.0
+ * 주간 통계 v3.0
  */
 export interface WeeklyStats {
   weekNumber: number;             // 주차 (1-12)
@@ -125,7 +152,7 @@ export interface WeeklyProgram {
 }
 
 /**
- * 로컬 스토리지 데이터 구조 v2.0
+ * 로컬 스토리지 데이터 구조 v2.0 (이전 버전 호환용)
  */
 export interface LocalStorageData {
   currentUser: string | null;
@@ -140,7 +167,20 @@ export interface LocalStorageData {
 }
 
 /**
- * 달력 날짜 타입 v2.0
+ * 🆕 v3.0 Firebase 데이터 구조
+ */
+export interface FirebaseUserData {
+  profile: UserProfile;
+  dailyChecks: {
+    [date: string]: DailyCheck;
+  };
+  weeklyStats?: {
+    [weekNumber: number]: WeeklyStats;
+  };
+}
+
+/**
+ * 달력 날짜 타입 v3.0
  */
 export interface CalendarDay {
   date: string;
@@ -155,12 +195,71 @@ export interface CalendarDay {
 }
 
 /**
- * 차트 데이터 포인트
+ * 차트 데이터 포인트 v3.0
  */
 export interface ChartDataPoint {
-  date: string;                   // "1/1" 형식
-  weight?: number;
-  waist?: number;
-  targetWeight?: number;
-  targetWaist?: number;
+  date: string;                   // "1/1" 형식 또는 "YYYY-MM-DD"
+  weight?: number;                // 체중 데이터
+  waist?: number;                 // 허리둘레 데이터
+  targetWeight?: number;          // 목표 체중 라인
+  targetWaist?: number;           // 목표 허리둘레 라인
+}
+
+/**
+ * 🆕 v3.0 인증 관련 타입
+ */
+export interface AuthUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  emailVerified: boolean;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
+export interface RegisterData {
+  email: string;
+  password: string;
+  displayName?: string;
+  initialWeight: number;
+  targetWeight: number;
+  initialWaist: number;
+  targetWaist: number;
+  height?: number;
+  age?: number;
+  gender?: 'male' | 'female';
+}
+
+/**
+ * 🆕 v3.0 API 응답 타입
+ */
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+/**
+ * 🆕 v3.0 로딩 상태 타입
+ */
+export interface LoadingState {
+  isLoading: boolean;
+  message?: string;
+}
+
+/**
+ * 🆕 v3.0 에러 상태 타입
+ */
+export interface ErrorState {
+  hasError: boolean;
+  message?: string;
+  code?: string;
 }
