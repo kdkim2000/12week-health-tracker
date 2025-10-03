@@ -1,0 +1,110 @@
+// firestore.rules
+// 12week-health-tracker v3.0 보안 규칙
+// 플랫 구조: dailyChecks 컬렉션에 직접 문서 저장
+// 수정: 로그아웃 시 권한 오류 방지 및 규칙 최적화
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // 헬퍼 함수
+    // ============================================
+    
+    // 인증된 사용자인지 확인
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // 사용자 본인인지 확인
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // ============================================
+    // users 컬렉션 (사용자 프로필)
+    // ============================================
+    match /users/{userId} {
+      // 읽기: 본인만 가능
+      allow read: if isOwner(userId);
+      
+      // 쓰기: 본인만 가능
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+    
+    // ============================================
+    // dailyChecks 컬렉션 (플랫 구조)
+    // 문서 ID 형식: {userId}_{date}
+    // 예: "abc123_2025-01-15"
+    // ============================================
+    match /dailyChecks/{documentId} {
+      
+      // documentId에서 userId 추출
+      // documentId 형식: userId_YYYY-MM-DD
+      // 예: "abc123_2025-01-15" → "abc123"
+      function getOwnerIdFromDocId() {
+        // '_' 이전 부분이 userId
+        let parts = documentId.split('_');
+        return parts[0];
+      }
+      
+      // documentId 패턴 검증
+      // 형식: {alphanumeric}_{YYYY-MM-DD}
+      function isValidDocumentId() {
+        return documentId.matches('^[a-zA-Z0-9]+_[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+      }
+      
+      // 읽기 권한 체크
+      // - 인증된 사용자
+      // - documentId의 userId가 본인
+      // - 또는 문서의 userId 필드가 본인
+      function canRead() {
+        return isAuthenticated() && (
+          getOwnerIdFromDocId() == request.auth.uid ||
+          (resource != null && resource.data.userId == request.auth.uid)
+        );
+      }
+      
+      // 쓰기 권한 체크 (생성/수정)
+      // - 인증된 사용자
+      // - documentId의 userId가 본인
+      // - 저장하려는 데이터의 userId가 본인
+      function canWrite() {
+        return isAuthenticated() &&
+               getOwnerIdFromDocId() == request.auth.uid &&
+               request.resource.data.userId == request.auth.uid;
+      }
+      
+      // 삭제 권한 체크
+      // - 인증된 사용자
+      // - documentId의 userId가 본인
+      function canDelete() {
+        return isAuthenticated() &&
+               getOwnerIdFromDocId() == request.auth.uid;
+      }
+      
+      // ⭐ 읽기: 본인 데이터만 (로그아웃 시에도 안전)
+      // resource != null 체크로 문서가 존재할 때만 resource.data 접근
+      allow read: if canRead();
+      
+      // ⭐ 생성: 본인 데이터만 + 형식 검증
+      allow create: if isValidDocumentId() && canWrite();
+      
+      // ⭐ 수정: 본인 데이터만
+      allow update: if canWrite();
+      
+      // ⭐ 삭제: 본인 데이터만
+      allow delete: if canDelete();
+    }
+    
+    // ============================================
+    // 기타 모든 컬렉션 접근 거부
+    // ============================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

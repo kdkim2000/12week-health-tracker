@@ -1,0 +1,64 @@
+// firestore.rules
+// Firebase Firestore 보안 규칙
+// 수정: 로그아웃 시 권한 오류 방지를 위한 명확한 규칙 설정
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // 사용자 프로필 (users 컬렉션)
+    // ============================================
+    match /users/{userId} {
+      // 읽기: 본인만 가능
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // 쓰기: 본인만 가능
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // 생성: 회원가입 시 본인 프로필 생성 가능
+      allow create: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // ============================================
+    // 일일 체크 (dailyChecks 컬렉션 - 플랫 구조)
+    // ============================================
+    match /dailyChecks/{documentId} {
+      // 문서 ID 형식: {userId}_{date}
+      // 예: user123_2025-01-15
+      
+      // userId 추출 함수
+      function getOwnerUserId() {
+        return resource.data.userId;
+      }
+      
+      function getRequestUserId() {
+        return request.resource.data.userId;
+      }
+      
+      // 읽기: 본인의 데이터만 읽을 수 있음
+      allow read: if request.auth != null 
+                  && resource.data.userId == request.auth.uid;
+      
+      // 생성: 본인의 데이터만 생성 가능
+      allow create: if request.auth != null 
+                    && request.resource.data.userId == request.auth.uid;
+      
+      // 수정: 본인의 데이터만 수정 가능
+      allow update: if request.auth != null 
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == request.auth.uid;
+      
+      // 삭제: 본인의 데이터만 삭제 가능
+      allow delete: if request.auth != null 
+                    && resource.data.userId == request.auth.uid;
+    }
+    
+    // ============================================
+    // 기타 모든 경로: 접근 거부
+    // ============================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

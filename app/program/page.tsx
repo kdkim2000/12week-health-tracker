@@ -1,5 +1,5 @@
 // 파일 경로: app/program/page.tsx
-// 설명: 주차별 운동/식단 프로그램 가이드
+// 설명: 주차별 운동/식단 프로그램 가이드 (로그인 필수)
 
 'use client';
 
@@ -40,6 +40,9 @@ import type { User } from '@/types';
  * - 운동 스케줄
  * - 식단 가이드
  * - 주간 목표
+ * 
+ * 로그인한 사용자만 접근 가능
+ * ProtectedRoute에 의해 보호됨
  */
 export default function ProgramPage() {
   const router = useRouter();
@@ -49,16 +52,35 @@ export default function ProgramPage() {
   const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      router.push('/login');
-    } else {
-      setUser(currentUser);
-      const currentWeek = getWeekNumber(currentUser.startDate, getTodayString()) || 1;
-      setSelectedWeek(currentWeek);
-      setLoading(false);
-    }
-  }, [router]);
+    // ProtectedRoute가 이미 로그인을 검증했으므로
+    // 여기서는 사용자 정보만 가져옴
+    const loadUserData = () => {
+      try {
+        const currentUser = getCurrentUser();
+        
+        if (currentUser) {
+          console.log('✅ 프로그램 페이지 - 사용자 정보 로드:', currentUser.email);
+          setUser(currentUser);
+          
+          // 현재 주차 계산
+          const currentWeek = getWeekNumber(currentUser.startDate, getTodayString()) || 1;
+          console.log('📅 현재 주차:', currentWeek);
+          setSelectedWeek(currentWeek);
+        } else {
+          console.warn('⚠️ 사용자 정보 없음 - ProtectedRoute에서 처리됨');
+        }
+      } catch (error) {
+        console.error('❌ 사용자 정보 로드 오류:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // 약간의 지연을 주어 ProtectedRoute가 먼저 실행되도록 함
+    const timer = setTimeout(loadUserData, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   if (loading) {
     return (
@@ -68,7 +90,14 @@ export default function ProgramPage() {
     );
   }
 
-  if (!user) return null;
+  // ProtectedRoute가 리다이렉트를 처리하므로 여기서는 null 반환만
+  if (!user) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   const program = getWeeklyProgram(selectedWeek);
   const phase = getPhaseFromWeek(selectedWeek);

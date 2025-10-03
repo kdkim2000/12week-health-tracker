@@ -122,32 +122,39 @@ export default function HomePage() {
     return stats;
   }, [user, dailyChecks]);
 
-  // 인증 상태 및 실시간 동기화 - 중복 구독 방지
+  // 인증 상태 및 실시간 동기화 - 로그아웃 시 리스너 정리
   useEffect(() => {
     let unsubscribeChecks: (() => void) | null = null;
+    let isSubscribed = true; // 컴포넌트 마운트 상태 추적
 
     const unsubscribeAuth = onAuthStateChange(async (firebaseUser) => {
       if (firebaseUser) {
         try {
           const userProfile = await getUserProfile(firebaseUser.uid);
           
-          if (userProfile) {
+          if (userProfile && isSubscribed) {
             setUser(userProfile);
 
             // 기존 구독 해제 (중복 방지)
             if (unsubscribeChecks) {
+              console.log('🔄 기존 리스너 정리');
               unsubscribeChecks();
+              unsubscribeChecks = null;
             }
 
             setSyncStatus('syncing');
+            console.log('✅ Firestore 리스너 시작:', firebaseUser.uid);
+            
             unsubscribeChecks = subscribeToDailyChecks(
               firebaseUser.uid,
               (checks) => {
-                setDailyChecks(checks);
-                setSyncStatus('synced');
+                if (isSubscribed) {
+                  setDailyChecks(checks);
+                  setSyncStatus('synced');
+                }
               }
             );
-          } else {
+          } else if (!userProfile) {
             console.error('사용자 프로필을 찾을 수 없습니다');
             router.push('/login');
           }
@@ -155,26 +162,53 @@ export default function HomePage() {
           console.error('사용자 정보 로딩 실패:', error);
           setSyncStatus('error');
         } finally {
-          setLoading(false);
+          if (isSubscribed) {
+            setLoading(false);
+          }
         }
       } else {
-        setLoading(false);
+        // 로그아웃 시: 리스너 즉시 정리
+        console.log('🚪 로그아웃 감지 - 리스너 정리 시작');
+        
+        if (unsubscribeChecks) {
+          unsubscribeChecks();
+          unsubscribeChecks = null;
+          console.log('✅ Firestore 리스너 정리 완료');
+        }
+        
+        // 상태 초기화
+        if (isSubscribed) {
+          setUser(null);
+          setDailyChecks({});
+          setSyncStatus('synced');
+          setLoading(false);
+        }
+        
+        // 로그인 페이지로 이동
         router.push('/login');
       }
     });
 
+    // Cleanup 함수: 컴포넌트 언마운트 시
     return () => {
+      console.log('🧹 컴포넌트 언마운트 - 모든 리스너 정리');
+      isSubscribed = false;
+      
       unsubscribeAuth();
+      
       if (unsubscribeChecks) {
         unsubscribeChecks();
+        unsubscribeChecks = null;
       }
     };
   }, [router]);
 
   const handleLogout = async () => {
     try {
+      console.log('🚪 로그아웃 시작...');
       await logOut();
-      router.push('/login');
+      // onAuthStateChange가 자동으로 리스너를 정리하고 리다이렉트함
+      console.log('✅ 로그아웃 완료');
     } catch (error) {
       console.error('로그아웃 실패:', error);
     }
@@ -188,7 +222,7 @@ export default function HomePage() {
     try {
       await saveDailyCheck(user.id, check);
     } catch (error) {
-      console.error('❌ 일일 체크 저장 실패:', error);
+      console.error('⌛ 일일 체크 저장 실패:', error);
       setSyncStatus('error');
     }
   }, [user]);
@@ -271,7 +305,12 @@ export default function HomePage() {
       </Alert>
 
       <PhaseIndicator currentWeek={currentWeek} currentPhase={currentPhase} />
-      <ProgressBar currentWeek={currentWeek} totalWeeks={12} />
+      <ProgressBar 
+        currentWeek={currentWeek} 
+        totalWeeks={12}
+        dailyChecks={dailyChecks}  // ⭐ 추가: dailyChecks 전달
+      />
+
       <HealthMetrics user={user} chartData={chartData} />
       <WeeklyStats weeklyData={weeklyData} currentWeek={currentWeek} />
 
