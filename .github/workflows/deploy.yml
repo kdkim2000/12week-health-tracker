@@ -50,6 +50,20 @@ jobs:
         run: npm run lint
         continue-on-error: true  # ESLint 경고가 있어도 빌드 계속 진행
 
+      - name: Debug Next.js configuration
+        run: |
+          echo "=== Checking Next.js configuration ==="
+          if [ -f "next.config.ts" ]; then
+            echo "Found next.config.ts:"
+            cat next.config.ts
+          elif [ -f "next.config.js" ]; then
+            echo "Found next.config.js:"
+            cat next.config.js
+          else
+            echo "No Next.js config file found!"
+          fi
+          echo "=========================="
+
       - name: Build with Next.js
         env:
           NODE_ENV: production
@@ -61,7 +75,10 @@ jobs:
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
           NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
-        run: npm run build
+        run: |
+          echo "Starting Next.js build with static export..."
+          npm run build
+          echo "Build completed. Checking output directory..."
 
       - name: Verify out directory exists
         run: |
