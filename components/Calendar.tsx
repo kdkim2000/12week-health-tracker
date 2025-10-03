@@ -239,7 +239,7 @@ export default function Calendar({ dates = [], dailyChecks = {}, onSaveCheck }: 
                   const completionRate = calculateCompletionRate(date);
 
                   return (
-                    <Grid size="auto" sx={{ width: `${100/7}%` }} key={date}>
+                    <Grid size="auto" sx={{ width: `${100/8}%` }} key={date}>
                       <Tooltip
                         title={
                           <Box>
