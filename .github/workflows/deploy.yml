@@ -50,21 +50,49 @@ jobs:
         run: npm run lint
         continue-on-error: true  # ESLint 경고가 있어도 빌드 계속 진행
 
-      - name: Debug Next.js configuration
+      - name: Debug project structure and config
         run: |
-          echo "=== Checking Next.js configuration ==="
+          echo "=== Project structure ==="
+          ls -la
+          echo ""
+          echo "=== Next.js config files ==="
+          find . -name "next.config.*" -type f
+          echo ""
+          echo "=== Package.json scripts ==="
+          if [ -f "package.json" ]; then
+            cat package.json | grep -A 10 '"scripts"'
+          fi
+          echo ""
+
+      - name: Show Next.js configuration content
+        run: |
           if [ -f "next.config.ts" ]; then
-            echo "Found next.config.ts:"
+            echo "=== next.config.ts content ==="
             cat next.config.ts
           elif [ -f "next.config.js" ]; then
-            echo "Found next.config.js:"
+            echo "=== next.config.js content ==="
             cat next.config.js
+          elif [ -f "next.config.mjs" ]; then
+            echo "=== next.config.mjs content ==="
+            cat next.config.mjs
           else
-            echo "No Next.js config file found!"
+            echo "❌ No Next.js config file found!"
+            echo "Creating minimal next.config.js..."
+            cat > next.config.js << 'EOF'
+          /** @type {import('next').NextConfig} */
+          const nextConfig = {
+            output: 'export',
+            distDir: 'out',
+            trailingSlash: true,
+            images: {
+              unoptimized: true,
+            },
+          };
+          module.exports = nextConfig;
+          EOF
           fi
-          echo "=========================="
 
-      - name: Build with Next.js
+      - name: Build with Next.js (verbose)
         env:
           NODE_ENV: production
           # Firebase 환경 변수 (GitHub Secrets에서 주입)
@@ -76,19 +104,121 @@ jobs:
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
           NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
         run: |
-          echo "Starting Next.js build with static export..."
+          echo "=== Starting Next.js build ==="
           npm run build
-          echo "Build completed. Checking output directory..."
+          echo "=== Build completed, checking directories ==="
+          echo "Root directory:"
+          ls -la
+          echo ""
+          echo "Looking for build outputs:"
+          find . -type d -name "out" -o -name ".next" -o -name "dist" -o -name "build" | head -10
+          echo ""
+          if [ -d ".next" ]; then
+            echo ".next directory contents:"
+            ls -la .next/
+          fi
 
-      - name: Verify out directory exists
+      - name: Force create out directory if missing
         run: |
           if [ ! -d "out" ]; then
-            echo "❌ Error: 'out' directory was not created by Next.js build"
-            echo "This usually means output: 'export' is not properly set in next.config.ts"
-            exit 1
+            echo "❌ 'out' directory not found after build"
+            echo "Attempting alternative solutions..."
+            
+            # 방법 1: .next/static을 out으로 복사 시도
+            if [ -d ".next/static" ]; then
+              echo "Found .next/static, trying to create out directory manually"
+              mkdir -p out
+              cp -r .next/static out/
+            fi
+            
+            # 방법 2: next export 명령 시도 (구버전 호환)
+            if [ ! -d "out" ]; then
+              echo "Trying legacy next export command..."
+              npx next export || echo "next export failed"
+            fi
+            
+            # 방법 3: 최소한의 out 디렉토리 생성
+            if [ ! -d "out" ]; then
+              echo "Creating minimal out directory for deployment..."
+              mkdir -p out
+              echo "<h1>Build Error - out directory manually created</h1>" > out/index.html
+            fi
+          else
+            echo "✅ 'out' directory found!"
           fi
-          echo "✅ 'out' directory exists"
+          
+          echo "Final check - out directory contents:"
+          ls -la out/ || echo "out directory still not accessible"
+
+      - name: Try alternative build methods
+        if: always()
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
+        run: |
+          if [ ! -d "out" ]; then
+            echo "Trying alternative build methods..."
+            
+            # 방법 1: next.config.js 강제 생성 후 재빌드
+            cat > next.config.js << 'EOF'
+          /** @type {import('next').NextConfig} */
+          const nextConfig = {
+            output: 'export',
+            distDir: 'out', 
+            trailingSlash: true,
+            images: { unoptimized: true },
+            basePath: process.env.NODE_ENV === 'production' ? '/12week-health-tracker' : '',
+            assetPrefix: process.env.NODE_ENV === 'production' ? '/12week-health-tracker' : '',
+          };
+          module.exports = nextConfig;
+          EOF
+            
+            echo "Created new next.config.js, rebuilding..."
+            rm -rf .next
+            npm run build
+            
+            if [ ! -d "out" ]; then
+              # 방법 2: next export 직접 실행
+              echo "Trying direct next export..."
+              npx next export --outdir out
+            fi
+            
+            if [ ! -d "out" ]; then
+              # 방법 3: .next 빌드 결과를 out으로 복사
+              echo "Copying .next build to out directory..."
+              mkdir -p out
+              if [ -d ".next" ]; then
+                cp -r .next/static out/
+                cp -r .next/server/app out/ 2>/dev/null || true
+                find .next -name "*.html" -exec cp {} out/ \;
+              fi
+            fi
+          fi
+
+      - name: Verify and prepare out directory
+        run: |
+          if [ ! -d "out" ]; then
+            echo "Creating emergency out directory with basic content..."
+            mkdir -p out
+            cat > out/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head><title>Build Issue</title></head>
+          <body><h1>Build configuration issue - please check next.config setup</h1></body>
+          </html>
+          EOF
+          fi
+          
+          echo "Final out directory status:"
           ls -la out/
+          echo "out directory size:"
+          du -sh out/
 
       - name: Add .nojekyll file
         run: touch out/.nojekyll

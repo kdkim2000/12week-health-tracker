@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:export": "next build && next export",
     "start": "next start",
     "lint": "next lint",
-    "export": "next build && touch out/.nojekyll"
+    "clean": "rm -rf .next out",
+    "prebuild": "npm run clean"
   },
   "dependencies": {
     "@emotion/react": "^11.13.3",
