@@ -1,5 +1,6 @@
 // 파일 경로: types/index.ts
 // 설명: v3.0 Firebase 통합 타입 정의 - 12개 체크 항목 포함
+// 수정: 이전 버전(v2.0) 호환성 추가
 
 /**
  * 사용자 정보 타입 (v3.0 Firebase 통합)
@@ -8,10 +9,10 @@ export interface User {
   id: string;
   email: string;
   password: string;
-  startDate: string;              // 프로그램 시작일
+  startDate: string | Date;       // Date 타입도 지원
   createdAt: string;
   
-  // 🆕 v2.0 추가 필드
+  // v2.0 추가 필드
   initialWeight: number;          // 초기 체중
   targetWeight: number;           // 목표 체중
   initialWaist: number;           // 초기 허리둘레
@@ -47,10 +48,13 @@ export type Phase = 1 | 2 | 3;
 
 /**
  * 일일 체크리스트 v3.0 (12개 항목)
+ * 이전 버전(v2.0) 호환성 포함
  */
 export interface DailyCheck {
   date: string;                   // YYYY-MM-DD
-  completed: boolean; 
+  completed: boolean;             // 전체 완료 여부
+  
+  // ===== v3.0 새 구조 (12개 항목) =====
   
   // 식사 관련 (3개)
   breakfastCompleted: boolean;    // 아침 식사
@@ -73,16 +77,22 @@ export interface DailyCheck {
   
   // 신체 측정
   weight?: number;                // 체중 (kg)
-  waist?: number;                 // 허리둘레 (cm) - 속성명 통일
+  waist?: number;                 // 허리둘레 (cm)
   waistCircumference?: number;    // 허리둘레 (cm) - 이전 버전 호환용
   
   // 컨디션
   condition?: number;             // 컨디션 (1-10)
   memo?: string;                  // 메모
   
-  // 🆕 v3.0 Firebase 메타데이터
+  // ===== v2.0 호환성 속성 (선택적) =====
+  meals?: string;                 // 이전 버전: 식단 기록 텍스트
+  water?: number;                 // 이전 버전: 물 섭취량 (waterIntake와 호환)
+  exercise?: string;              // 이전 버전: 운동 기록 텍스트
+  
+  // v3.0 Firebase 메타데이터
   createdAt?: string;             // 생성 시간
   updatedAt?: string;             // 수정 시간
+  userId?: string;                // 사용자 ID (Firestore용)
 }
 
 /**
@@ -168,7 +178,7 @@ export interface LocalStorageData {
 }
 
 /**
- * 🆕 v3.0 Firebase 데이터 구조
+ * v3.0 Firebase 데이터 구조
  */
 export interface FirebaseUserData {
   profile: UserProfile;
@@ -207,7 +217,7 @@ export interface ChartDataPoint {
 }
 
 /**
- * 🆕 v3.0 인증 관련 타입
+ * v3.0 인증 관련 타입
  */
 export interface AuthUser {
   uid: string;
@@ -237,7 +247,7 @@ export interface RegisterData {
 }
 
 /**
- * 🆕 v3.0 API 응답 타입
+ * v3.0 API 응답 타입
  */
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -249,7 +259,7 @@ export interface ApiResponse<T = any> {
 }
 
 /**
- * 🆕 v3.0 로딩 상태 타입
+ * v3.0 로딩 상태 타입
  */
 export interface LoadingState {
   isLoading: boolean;
@@ -257,7 +267,7 @@ export interface LoadingState {
 }
 
 /**
- * 🆕 v3.0 에러 상태 타입
+ * v3.0 에러 상태 타입
  */
 export interface ErrorState {
   hasError: boolean;
