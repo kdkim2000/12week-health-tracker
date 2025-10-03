@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { Box, Paper, Typography, ToggleButtonGroup, ToggleButton } from '@mui/material';
-import { TrendingDown, ShowChart } from '@mui/icons-material';
+import { ShowChart } from '@mui/icons-material';
 import {
   LineChart,
   Line,

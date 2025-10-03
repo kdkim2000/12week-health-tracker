@@ -2,7 +2,6 @@
 // 설명: v2.0 인증 함수 (신체정보 추가)
 
 import { getUserByEmail, createUser, setCurrentUser } from './localStorage';
-import { getTodayString } from './dateUtils';
 
 /**
  * 이메일 유효성 검사

@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import { Close, CheckCircle, Cancel, RadioButtonUnchecked } from '@mui/icons-material';
 import type { DailyCheck, CalendarDay } from '@/types';
-import { getDayName, isToday, isPast, isFuture } from '@/lib/dateUtils';
+import { getDayName, isToday, isFuture } from '@/lib/dateUtils'; // isPast 제거
 import { getPhaseFromWeek, PHASE_COLORS } from '@/lib/programData';
 import DailyCheckForm from './DailyCheckForm';
 
@@ -141,8 +141,8 @@ export default function Calendar({ dates = [], dailyChecks = {}, onSaveCheck }: 
     setSelectedDate(null);
   };
 
-  const handleSaveCheck = (check: DailyCheck) => {
-    onSaveCheck(check);
+  const handleSaveCheck = (checkData: DailyCheck) => {
+    onSaveCheck(checkData);
     setSelectedDate(null); // 저장 후 다이얼로그 닫기
   };
 

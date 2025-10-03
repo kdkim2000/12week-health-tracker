@@ -63,7 +63,11 @@ export default function ProgramPage() {
           setUser(currentUser);
           
           // 현재 주차 계산
-          const currentWeek = getWeekNumber(currentUser.startDate, getTodayString()) || 1;
+          // startDate가 Date 객체일 경우 string으로 변환
+          const startDateString = currentUser.startDate instanceof Date 
+            ? currentUser.startDate.toISOString().split('T')[0] 
+            : currentUser.startDate;
+          const currentWeek = getWeekNumber(startDateString, getTodayString()) || 1;
           console.log('📅 현재 주차:', currentWeek);
           setSelectedWeek(currentWeek);
         } else {

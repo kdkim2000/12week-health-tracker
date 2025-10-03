@@ -25,13 +25,13 @@ import {
   subscribeToDailyChecks,
   saveDailyCheck,
 } from '@/lib/firebase';
-import { User, DailyCheck, ChartDataPoint } from '@/types';
+import { User, DailyCheck, ChartDataPoint, Phase } from '@/types';
 import { getCurrentWeek, get12WeekDates, formatDate, getWeekDates } from '@/lib/dateUtils';
 import { getPhaseFromWeek } from '@/lib/programData';
 
 interface WeeklyStatsData {
   weekNumber: number;
-  phase: number;
+  phase: Phase;
   achievementRate: number;
   mealCompletionRate: number;
   waterAverageIntake: number;
@@ -67,60 +67,81 @@ export default function HomePage() {
     return data.sort((a, b) => a.date.localeCompare(b.date));
   }, [user, dailyChecks]);
 
-  const weeklyData = useMemo<WeeklyStatsData[]>(() => {
-    if (!user) return [];
+  // weeklyData useMemo 부분도 타입 캐스팅 추가
+const weeklyData = useMemo<WeeklyStatsData[]>(() => {
+  if (!user) return [];
 
-    const stats: WeeklyStatsData[] = [];
+  const stats: WeeklyStatsData[] = [];
 
-    for (let week = 1; week <= 12; week++) {
-      const weekDates = getWeekDates(
-        typeof user.startDate === 'string' ? user.startDate : formatDate(user.startDate),
-        week
-      );
-      
-      const weekChecks = weekDates
-        .map(date => dailyChecks[date])
-        .filter(check => check !== undefined);
+  for (let week = 1; week <= 12; week++) {
+    const weekDates = getWeekDates(
+      typeof user.startDate === 'string' ? user.startDate : formatDate(user.startDate),
+      week
+    );
+    
+    const weekChecks = weekDates
+      .map(date => dailyChecks[date])
+      .filter(check => check !== undefined);
 
-      const completedCount = weekChecks.filter(check => check.completed).length;
-      const mealCompletedCount = weekChecks.filter(check => check.meals).length;
-      const mealRate = weekChecks.length > 0 ? (mealCompletedCount / weekChecks.length) * 100 : 0;
-      const waterTotal = weekChecks.reduce((sum, check) => sum + (check.water || 0), 0);
-      const waterAvg = weekChecks.length > 0 ? waterTotal / weekChecks.length : 0;
-      const exerciseDaysCount = weekChecks.filter(check => check.exercise).length;
-      const totalMinutes = weekChecks.reduce((sum, check) => {
-        if (check.exercise) {
-          const match = check.exercise.match(/(\d+)분/);
-          return sum + (match ? parseInt(match[1]) : 0);
-        }
-        return sum;
-      }, 0);
-
-      const weekWeights = weekChecks
-        .map(check => check.weight)
-        .filter(w => w !== undefined) as number[];
-      
-      let weightChange: number | undefined;
-      if (weekWeights.length >= 2) {
-        weightChange = weekWeights[0] - weekWeights[weekWeights.length - 1];
+    const completedCount = weekChecks.filter(check => check.completed).length;
+    
+    // meals 호환성 처리
+    const mealCompletedCount = weekChecks.filter(check => 
+      check.meals || 
+      check.breakfastCompleted || 
+      check.lunchCompleted || 
+      check.dinnerCompleted
+    ).length;
+    
+    const mealRate = weekChecks.length > 0 ? (mealCompletedCount / weekChecks.length) * 100 : 0;
+    
+    // water 호환성 처리
+    const waterTotal = weekChecks.reduce((sum, check) => 
+      sum + (check.waterIntake || check.water || 0), 0
+    );
+    const waterAvg = weekChecks.length > 0 ? waterTotal / weekChecks.length : 0;
+    
+    // exercise 호환성 처리
+    const exerciseDaysCount = weekChecks.filter(check => 
+      check.exercise || check.exerciseCompleted
+    ).length;
+    
+    const totalMinutes = weekChecks.reduce((sum, check) => {
+      if (check.exerciseDuration) {
+        return sum + check.exerciseDuration;
       }
+      if (check.exercise) {
+        const match = check.exercise.match(/(\d+)분/);
+        return sum + (match ? parseInt(match[1]) : 0);
+      }
+      return sum;
+    }, 0);
 
-      const achievementRate = weekChecks.length > 0 ? (completedCount / weekChecks.length) * 100 : 0;
-
-      stats.push({
-        weekNumber: week,
-        phase: getPhaseFromWeek(week),
-        achievementRate,
-        mealCompletionRate: mealRate,
-        waterAverageIntake: waterAvg,
-        exerciseDays: exerciseDaysCount,
-        totalExerciseMinutes: totalMinutes,
-        weightChange,
-      });
+    const weekWeights = weekChecks
+      .map(check => check.weight)
+      .filter(w => w !== undefined) as number[];
+    
+    let weightChange: number | undefined;
+    if (weekWeights.length >= 2) {
+      weightChange = weekWeights[0] - weekWeights[weekWeights.length - 1];
     }
 
-    return stats;
-  }, [user, dailyChecks]);
+    const achievementRate = weekChecks.length > 0 ? (completedCount / weekChecks.length) * 100 : 0;
+
+    stats.push({
+      weekNumber: week,
+      phase: getPhaseFromWeek(week) as Phase,  // ⭐ Phase 타입으로 캐스팅
+      achievementRate,
+      mealCompletionRate: mealRate,
+      waterAverageIntake: waterAvg,
+      exerciseDays: exerciseDaysCount,
+      totalExerciseMinutes: totalMinutes,
+      weightChange,
+    });
+  }
+
+  return stats;
+}, [user, dailyChecks]);
 
   // 인증 상태 및 실시간 동기화 - 로그아웃 시 리스너 정리
   useEffect(() => {

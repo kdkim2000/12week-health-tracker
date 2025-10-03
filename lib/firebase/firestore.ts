@@ -1,4 +1,4 @@
-// E:\apps\12week-health-tracker\lib\firebase\firestore.ts
+// /lib/firebase/firestore.ts
 /**
  * Firestore 데이터베이스 작업
  * - 사용자 프로필 CRUD
@@ -30,8 +30,8 @@ import { User, DailyCheck } from '@/types';
 /**
  * undefined 필드를 제거하는 헬퍼 함수
  */
-function removeUndefinedFields(obj: any): any {
-  const cleaned: any = {};
+function removeUndefinedFields(obj: Record<string, unknown>): Record<string, unknown> {
+  const cleaned: Record<string, unknown> = {};
   
   Object.keys(obj).forEach(key => {
     if (obj[key] !== undefined) {
@@ -47,12 +47,12 @@ function removeUndefinedFields(obj: any): any {
  * @param timestamp - Firestore Timestamp 또는 Date
  * @returns Date 객체
  */
-function convertTimestampToDate(timestamp: any): Date {
+function convertTimestampToDate(timestamp: unknown): Date {
   if (timestamp instanceof Timestamp) {
     return timestamp.toDate();
   }
-  if (timestamp?.toDate) {
-    return timestamp.toDate();
+  if (timestamp && typeof timestamp === 'object' && 'toDate' in timestamp) {
+    return (timestamp as Timestamp).toDate();
   }
   if (timestamp instanceof Date) {
     return timestamp;
@@ -159,7 +159,7 @@ export async function updateUserProfile(
     const userRef = doc(db, 'users', userId);
     
     // Date 필드를 Timestamp로 변환
-    const convertedUpdates: any = { ...updates };
+    const convertedUpdates: Record<string, unknown> = { ...updates };
     if (updates.startDate) {
       convertedUpdates.startDate = convertDateToTimestamp(updates.startDate);
     }
@@ -244,9 +244,9 @@ export async function getAllDailyChecks(
     const querySnapshot = await getDocs(checksRef);
 
     const dailyChecks: Record<string, DailyCheck> = {};
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      dailyChecks[doc.id] = {
+    querySnapshot.forEach((docSnapshot) => {
+      const data = docSnapshot.data();
+      dailyChecks[docSnapshot.id] = {
         ...data,
         createdAt: data.createdAt ? convertTimestampToDate(data.createdAt).toISOString() : undefined,
         updatedAt: data.updatedAt ? convertTimestampToDate(data.updatedAt).toISOString() : undefined,
@@ -285,9 +285,9 @@ export async function getDailyChecksByDateRange(
     const querySnapshot = await getDocs(q);
 
     const dailyChecks: Record<string, DailyCheck> = {};
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      dailyChecks[doc.id] = {
+    querySnapshot.forEach((docSnapshot) => {
+      const data = docSnapshot.data();
+      dailyChecks[docSnapshot.id] = {
         ...data,
         createdAt: data.createdAt ? convertTimestampToDate(data.createdAt).toISOString() : undefined,
         updatedAt: data.updatedAt ? convertTimestampToDate(data.updatedAt).toISOString() : undefined,
@@ -341,13 +341,13 @@ export function subscribeToUserProfile(
 
   return onSnapshot(
     userRef,
-    (doc) => {
-      if (doc.exists()) {
-        const data = doc.data();
+    (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const data = docSnapshot.data();
         
         // Timestamp를 Date로 변환
-        const user: User = {
-          id: doc.id,
+        const userProfile: User = {
+          id: docSnapshot.id,
           email: data.email,
           password: '',
           initialWeight: data.initialWeight,
@@ -357,7 +357,7 @@ export function subscribeToUserProfile(
           startDate: convertTimestampToDate(data.startDate),
           createdAt: data.createdAt?.toDate().toISOString() || new Date().toISOString(),
         };
-        callback(user);
+        callback(userProfile);
         console.log('🔄 사용자 프로필 실시간 업데이트');
       } else {
         callback(null);
@@ -382,19 +382,19 @@ export function subscribeToDailyChecks(
   return onSnapshot(
     q,
     (querySnapshot) => {
-      const dailyChecks: Record<string, DailyCheck> = {};
+      const checksData: Record<string, DailyCheck> = {};
       
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
+      querySnapshot.forEach((docSnapshot) => {
+        const data = docSnapshot.data();
         // date를 키로 사용
-        dailyChecks[data.date] = {
+        checksData[data.date] = {
           ...data,
           createdAt: data.createdAt ? convertTimestampToDate(data.createdAt).toISOString() : undefined,
           updatedAt: data.updatedAt ? convertTimestampToDate(data.updatedAt).toISOString() : undefined,
         } as DailyCheck;
       });
       
-      callback(dailyChecks);
+      callback(checksData);
       // 데이터가 있을 때만 로그 출력
       if (querySnapshot.size > 0) {
         console.log(`🔄 실시간 동기화: ${querySnapshot.size}개 체크 업데이트`);
@@ -422,9 +422,9 @@ export function subscribeToDailyCheck(
 
   return onSnapshot(
     checkRef,
-    (doc) => {
-      if (doc.exists()) {
-        const data = doc.data();
+    (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const data = docSnapshot.data();
         // Timestamp를 ISO 문자열로 변환
         callback({
           ...data,

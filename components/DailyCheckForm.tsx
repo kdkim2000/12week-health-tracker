@@ -3,10 +3,6 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   Box,
   TextField,
@@ -17,14 +13,13 @@ import {
   Rating,
   Divider,
   Alert,
-  CircularProgress,
 } from '@mui/material';
 import { DailyCheck } from '@/types';
 
 interface DailyCheckFormProps {
   date: string;
   initialData?: DailyCheck | null;
-  onSave: (check: DailyCheck) => void; // 수정: date 파라미터 제거
+  onSave: (check: DailyCheck) => void;
   onCancel: () => void;
 }
 
@@ -39,7 +34,6 @@ export default function DailyCheckForm({
   onSave,
   onCancel,
 }: DailyCheckFormProps) {
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   // 식사
@@ -90,55 +84,37 @@ export default function DailyCheckForm({
     }
   }, [initialData]);
 
-  // handleSave 함수 수정
-const handleSave = () => {
-  try {
-    // 기본 필드
-    const checkData: any = {
-      date,
-      completed: true,
-      breakfastCompleted,
-      lunchCompleted,
-      dinnerCompleted,
-      waterIntake,
-      exerciseCompleted,
-      condition,
-    };
+  // handleSave 함수 수정 - 타입 안전성 보장
+  const handleSave = () => {
+    try {
+      // DailyCheck 타입에 맞는 객체 직접 생성
+      const checkData: DailyCheck = {
+        date,
+        completed: true,
+        breakfastCompleted,
+        lunchCompleted,
+        dinnerCompleted,
+        waterIntake,
+        exerciseCompleted,
+        condition,
+        // 조건부 필드들 - undefined 또는 유효한 값
+        breakfastTime: breakfastCompleted && breakfastTime ? breakfastTime : undefined,
+        lunchTime: lunchCompleted && lunchTime ? lunchTime : undefined,
+        dinnerTime: dinnerCompleted && dinnerTime ? dinnerTime : undefined,
+        exerciseType: exerciseCompleted && exerciseType ? exerciseType : undefined,
+        exerciseDuration: exerciseCompleted && exerciseDuration ? parseFloat(exerciseDuration) : undefined,
+        sleepHours: sleepHours ? parseFloat(sleepHours) : undefined,
+        weight: weight ? parseFloat(weight) : undefined,
+        waistCircumference: waistCircumference ? parseFloat(waistCircumference) : undefined,
+        memo: memo.trim() || undefined,
+      };
 
-    // 조건부 필드 추가 (undefined가 아닐 때만)
-    if (breakfastCompleted && breakfastTime) {
-      checkData.breakfastTime = breakfastTime;
+      onSave(checkData);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '저장에 실패했습니다';
+      setError(errorMessage);
     }
-    if (lunchCompleted && lunchTime) {
-      checkData.lunchTime = lunchTime;
-    }
-    if (dinnerCompleted && dinnerTime) {
-      checkData.dinnerTime = dinnerTime;
-    }
-    if (exerciseCompleted && exerciseType) {
-      checkData.exerciseType = exerciseType;
-    }
-    if (exerciseCompleted && exerciseDuration) {
-      checkData.exerciseDuration = parseFloat(exerciseDuration);
-    }
-    if (sleepHours) {
-      checkData.sleepHours = parseFloat(sleepHours);
-    }
-    if (weight) {
-      checkData.weight = parseFloat(weight);
-    }
-    if (waistCircumference) {
-      checkData.waistCircumference = parseFloat(waistCircumference);
-    }
-    if (memo.trim()) {
-      checkData.memo = memo.trim();
-    }
-
-    onSave(checkData as DailyCheck);
-  } catch (err: any) {
-    setError(err.message || '저장에 실패했습니다');
-  }
-};
+  };
 
   return (
     <Box>
@@ -342,13 +318,12 @@ const handleSave = () => {
 
       {/* 버튼 영역 */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
-        <Button onClick={onCancel} disabled={saving}>
+        <Button onClick={onCancel}>
           취소
         </Button>
         <Button
           variant="contained"
           onClick={handleSave}
-          disabled={saving}
         >
           저장
         </Button>

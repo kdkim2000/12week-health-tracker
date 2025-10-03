@@ -44,7 +44,7 @@ export async function signUp(
     );
 
     // Firestore에 사용자 프로필 생성
-    const user: User = {
+    const newUser: User = {
       id: userCredential.user.uid,
       email,
       password: '', // Firebase Auth 사용 시 비밀번호는 저장하지 않음
@@ -52,10 +52,10 @@ export async function signUp(
       createdAt: new Date().toISOString(),
     };
 
-    await createUserProfile(user);
+    await createUserProfile(newUser);
 
-    console.log('✅ 회원가입 성공:', user.id);
-    return user;
+    console.log('✅ 회원가입 성공:', newUser.id);
+    return newUser;
   } catch (error) {
     const authError = error as AuthError;
     console.error('❌ 회원가입 실패:', authError);
@@ -79,14 +79,14 @@ export async function signIn(email: string, password: string): Promise<User> {
     );
 
     // Firestore에서 사용자 프로필 가져오기
-    const user = await getUserProfile(userCredential.user.uid);
+    const userProfile = await getUserProfile(userCredential.user.uid);
 
-    if (!user) {
+    if (!userProfile) {
       throw new Error('사용자 정보를 찾을 수 없습니다.');
     }
 
-    console.log('✅ 로그인 성공:', user.id);
-    return user;
+    console.log('✅ 로그인 성공:', userProfile.id);
+    return userProfile;
   } catch (error) {
     const authError = error as AuthError;
     console.error('❌ 로그인 실패:', authError);
