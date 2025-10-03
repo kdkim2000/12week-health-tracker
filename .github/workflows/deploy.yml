@@ -63,6 +63,16 @@ jobs:
           NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
         run: npm run build
 
+      - name: Verify out directory exists
+        run: |
+          if [ ! -d "out" ]; then
+            echo "❌ Error: 'out' directory was not created by Next.js build"
+            echo "This usually means output: 'export' is not properly set in next.config.ts"
+            exit 1
+          fi
+          echo "✅ 'out' directory exists"
+          ls -la out/
+
       - name: Add .nojekyll file
         run: touch out/.nojekyll
 
