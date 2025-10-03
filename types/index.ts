@@ -50,6 +50,7 @@ export type Phase = 1 | 2 | 3;
  */
 export interface DailyCheck {
   date: string;                   // YYYY-MM-DD
+  completed: boolean; 
   
   // 식사 관련 (3개)
   breakfastCompleted: boolean;    // 아침 식사
